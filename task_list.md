@@ -1,4 +1,16 @@
-## September 21
+## October 5
+
+1. In addition to Sept. 21 tasks
+
+    1. Look at purrr_toy.R and apply iteration to obtain probabilities over an entire match.
+    
+    2. Make a line plot of the probabilities through time for a particular match of interest.
+    
+    3. Get WTA data (both match-level and point-level) and format the data in the same way you did the ATP data.
+
+## September 28 (No Meeting: MH)
+
+## September 21 (No Meeting: BM)
 
 1. Download <https://github.com/skoval/deuce/tree/master>
 

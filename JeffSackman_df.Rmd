@@ -1,0 +1,57 @@
+---
+title: "JeffSackman_df"
+author: "Ben Moolman"
+date: "2023-09-29"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(deuce)
+```
+
+Get csv for match data
+```{r}
+usopen_2022_df <- readr::read_csv("2022-usopen-points.csv")
+```
+
+Select one match from the data (Alcaraz def Sinner 6-3, 6-7, 6-7, 7-5, 6-3)
+```{r}
+# select the single match
+usopen_2022_df <- usopen_2022_df |>
+  filter(match_id == "2022-usopen-1503")
+
+```
+
+make a data.frame with 8 columns, n_point rows, each column corresponds to an argument in the function above
+```{r}
+# make the dataframe
+df <- tibble(
+    p1_pts = usopen_2022_df$P1PointsWon,
+    p2_pts = usopen_2022_df$P2PointsWon,
+    p1_games = usopen_2022_df$P1GamesWon,
+    p2_games = usopen_2022_df$P2GamesWon,
+    p1_sets = count(usopen_2022_df$SetWinner == 1),
+    p2_sets = count(usopen_2022_df$SetWinner == 2),
+    serer_prob = 0.65,
+    returner_prob = 0.55
+  )
+```
+
+
+Put data from (2) into in_match_win(c(3), c(2), c(5), c(5),c(0), c(0), c(0.69), c(0.69), bestof3 = T, advantage = F)
+
+make a data.frame with 8 columns, n_point rows, each column corresponds to an argument in the function above.
+```{r}
+# make the dataframe
+wimbledon_2017 <- wimbledon_2017_df |>
+  mutate(
+    p1_pts = 
+  )
+```
+
+```{r}
+wimbledon_2017_df
+```
+

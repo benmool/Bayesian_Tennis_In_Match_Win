@@ -1,3 +1,13 @@
+## October 19
+
+1. Put data from (2) into `in_match_win(c(3), c(2), c(5), c(5),c(0), c(0), c(0.69), c(0.69), bestof3 = T, advantage = F)`
+
+2. Look at purrr_toy.R and apply iteration to obtain probabilities over an entire match.
+    
+3. Make a line plot of the probabilities through time for a particular match of interest.
+    
+4. Get WTA data (both match-level and point-level) and format the data in the same way you did the ATP data.
+
 ## October 5
 
 1. In addition to Sept. 21 tasks

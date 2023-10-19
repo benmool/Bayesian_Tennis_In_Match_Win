@@ -1,3 +1,13 @@
+## October 26
+
+1. Fix set issue.
+
+2. fix data so that data is split with player A serving in one data frame, player B serving in the second data frame.
+
+3. Make plot assuming equal serving probabilities.
+
+
+
 ## October 19
 
 1. Put data from (2) into `in_match_win(c(3), c(2), c(5), c(5),c(0), c(0), c(0.69), c(0.69), bestof3 = T, advantage = F)`

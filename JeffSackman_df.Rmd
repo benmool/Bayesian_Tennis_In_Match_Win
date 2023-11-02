@@ -14,18 +14,23 @@ library(purrr)
 
 Get csv for match data
 ```{r}
-usopen_2022_df <- readr::read_csv("2022-usopen-points.csv")
+uso22 <- readr::read_csv("2022-usopen-points.csv")
 ```
 
 Select one match from the data (Alcaraz def Sinner 6-3, 6-7, 6-7, 7-5, 6-3)
 ```{r}
 # select the single match
-usopen_2022_df <- usopen_2022_df |>
-  filter(match_id == "2022-usopen-1503")
+usopen_2022_df <- uso22 |>
+  filter(match_id == "2022-usopen-1503") |>
+  # now use SetWinner variable to change P1GamesWon and P2GamesWon to 0 for these rows
+  mutate(P1GamesWon = ifelse(SetWinner != 0, 0, P1GamesWon),
+         P2GamesWon = ifelse(SetWinner != 0, 0, P2GamesWon))
+
+# check to see if P1GamesWon and P2GamesWon are 0 for all rows where SetWinner != 0
+usopen_2022_df |> filter(SetWinner != 0)
 ```
 
 NOTE: Player 1 is Sinner and Player 2 is Alcaraz.
-
 ```{r}
 test <- usopen_2022_df |> filter(P1GamesWon == 6 & P2GamesWon == 6)
 ```
@@ -39,7 +44,8 @@ uso_condensed <- usopen_2022_df |>
          P2Score,
          P1GamesWon,
          P2GamesWon,
-         SetWinner) |>
+         SetWinner,
+         PointServer) |>
   mutate(P1Score = ifelse(P1Score == "AD", 4, P1Score),
          P2Score = ifelse(P2Score == "AD", 4, P2Score),
          P1PointsWon = as.numeric(P1Score),
@@ -53,7 +59,8 @@ uso_condensed <- usopen_2022_df |>
                                  P2Score == 15 ~ 1,
                                  P2Score == 30 ~ 2,
                                  P2Score == 40 ~ 3,
-                                 TRUE ~ P2PointsWon))
+                                 TRUE ~ P2PointsWon)) |>
+  mutate(pt_number = row_number())
 ```
 
 
@@ -67,108 +74,91 @@ df <- tibble(
     p2_games = uso_condensed$P2GamesWon,
     p1_sets = cumsum(uso_condensed$SetWinner == 1),
     p2_sets = cumsum(uso_condensed$SetWinner == 2),
-    server_prob = 0.65,
-    returner_prob = 0.55
-  )
+    server_prob = 0.52,
+    returner_prob = 0.48,
+    server = uso_condensed$PointServer,
+    pt_number = uso_condensed$pt_number)
+# split the df for each player serving
+sinner_serving <- df |>
+  filter(server == 1)
+alcaraz_serving <- df |>
+  filter(server == 2)
 ```
 
-
-Put df into in_match_win(c(3), c(2), c(5), c(5),c(0), c(0), c(0.69), c(0.69), bestof3 = T, advantage = F)
-
-Having trouble with tiebreaker, filter to see those points
-
+Sinner serving df
 ```{r}
-test <- df |> filter(p1_games == 6 & p2_games == 6)
+# create df with sinner serving
+sinner_serving_f <- tibble(
+  point_a = sinner_serving$p1_pts,
+  point_b = sinner_serving$p2_pts,
+  game_a = sinner_serving$p1_games,
+  game_b = sinner_serving$p2_games,
+  set_a = sinner_serving$p1_sets,
+  set_b = sinner_serving$p2_sets,
+  server.prob = sinner_serving$server_prob,
+  returner.prob = sinner_serving$returner_prob)
+  
+# calculate probability of sinner winning throughout the match
+sinner_serve_prob <- sinner_serving_f |> pmap(in_match_win, bestof3 = FALSE,
+                   advantage = FALSE)
+
+# add probability to sinner_serving df
+sinner_serving$probability <- sinner_serve_prob
+
+# fix the probability column
+sinner_serving <- sinner_serving |> unnest(probability)
 ```
 
+Alcaraz serving df
 ```{r}
-# try passing in as lists?
-p1_pts_list <- list(df$p1_pts)
-p2_pts_list <- list(df$p2_pts)
-p1_games_list <- list(df$p1_games)
-p2_games_list <- list(df$p2_games)
-p1_sets_list <- list(df$p1_sets)
-p2_sets_list <- list(df$p2_sets)
-server_prob_list <- list(df$server_prob)
-returner_prob_list <- list(df$returner_prob)
-in_match_win(p1_pts_list, p2_pts_list, p1_games_list, p2_games_list, p1_sets_list, p2_sets_list, server_prob_list, returner_prob_list, bestof3 = F, advantage = F)
+# create df with alcaraz serving
+alcaraz_serving_f <- tibble(
+  point_a = alcaraz_serving$p2_pts,
+  point_b = alcaraz_serving$p1_pts,
+  game_a = alcaraz_serving$p2_games,
+  game_b = alcaraz_serving$p1_games,
+  set_a = alcaraz_serving$p2_sets,
+  set_b = alcaraz_serving$p1_sets,
+  server.prob = alcaraz_serving$server_prob,
+  returner.prob = alcaraz_serving$returner_prob)
 
-toy_points <- tibble::tibble(point_a = p1_pts_list, point_b = p2_pts_list,
-                         game_a = p1_games_list, game_b = p2_games_list,
-                         set_a = p1_sets_list, set_b = p2_sets_list,
-                         server.prob = server_prob_list,
-                         returner.prob = returner_prob_list)
+# calculate probability of alcaraz winning throughout the match
+alcaraz_serve_prob <- alcaraz_serving_f |> pmap(in_match_win, bestof3 = FALSE,
+                   advantage = FALSE)
 
+# add probability to alcaraz_serving df
+alcaraz_serving$probability <- alcaraz_serve_prob
 
-pmap(toy_points, in_match_win, bestof3 = FALSE,
-                   advantage = TRUE)
+# fix the probability column
+alcaraz_serving <- alcaraz_serving |> unnest(probability)
 ```
 
-2. Look at purrr_toy.R and apply iteration to obtain probabilities over an entire match.
+Combine the two data.frames
 ```{r}
-# make a toy dataframe
-toy_df <- tibble(
-  point_a = c(0, 0, 0, 0, 0, 1, 2, 3, 0),
-  point_b = c(0, 1, 2, 3, 0, 0, 0, 0, 0),
-  game_a = c(0, 0, 0, 1, 1, 1, 1, 1, 1),
-  game_b = c(0, 0, 0, 0, 0, 0, 0, 0, 1),
-  set_a = c(0, 0, 0, 0, 0, 0, 0, 0, 0),
-  set_b = c(0, 0, 0, 0, 0, 0, 0, 0, 0),
-  server.prob = c(0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65),
-  returner.prob = c(0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55))
-
-toy_df |> pmap(in_match_win, bestof3 = FALSE,
-                   advantage = TRUE)
+# combine the two data.frames
+recombined_uso <- rbind(sinner_serving, alcaraz_serving) |> 
+  arrange(pt_number)
 ```
 
+Plot the probability of winning the match for each player
 ```{r}
-p1_pts_tuple <- tibble(p1_pts = I(list(df$p1_pts)))
-p2_pts_tuple <- tibble(p2_pts = I(list(df$p2_pts)))
-p1_games_tuple <- tibble(p1_games = I(list(df$p1_games)))
-p2_games_tuple <- tibble(p2_games = I(list(df$p2_games)))
-p1_sets_tuple <- tibble(p1_sets = I(list(df$p1_sets)))
-p2_sets_tuple <- tibble(p2_sets = I(list(df$p2_sets)))
-server_prob_tuple <- tibble(server_prob = I(list(df$server_prob)))
-returner_prob_tuple <- tibble(returner_prob = I(list(df$returner_prob)))
+# change server variable to player name
+recombined_uso$server <- ifelse(recombined_uso$server == 1, "Sinner", "Alcaraz")
 
-toy_df2 <- tibble(
-  point_a = p1_pts_tuple,
-  point_b = p2_pts_tuple,
-  game_a = p1_games_tuple,
-  game_b = p2_games_tuple,
-  set_a = p1_sets_tuple,
-  set_b = p2_sets_tuple,
-  server.prob = server_prob_tuple,
-  returner.prob = returner_prob_tuple)
+# convert the server column to a factor
+recombined_uso$server <- factor(recombined_uso$server)
 
-toy_df2 |> pmap(in_match_win, bestof3 = FALSE,
-                   advantage = TRUE)
+library(ggplot2)
+
+# plot the probability of winning the match for each player
+recombined_uso |> ggplot(aes(x = pt_number, y = probability, color = server)) +
+  geom_line() +
+  scale_color_manual(values = c("red", "blue")) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open 2022",
+       subtitle = "Probability of Winning Match for Each Player",
+       color = "Server") +
+  theme_bw()
 ```
-
-```{r}
-# passing in as vectors?
-p1_pts_vector <- df$p1_pts
-p2_pts_vector <- df$p2_pts
-p1_games_vector <- df$p1_games
-p2_games_vector <- df$p2_games
-p1_sets_vector <- df$p1_sets
-p2_sets_vector <- df$p2_sets
-server_prob_vector <- df$server_prob
-returner_prob_vector <- df$returner_prob
-
-toy_df3 <- tibble(
-  point_a = p1_pts_vector,
-  point_b = p2_pts_vector,
-  game_a = p1_games_vector,
-  game_b = p2_games_vector,
-  set_a = p1_sets_vector,
-  set_b = p2_sets_vector,
-  server.prob = server_prob_vector,
-  returner.prob = returner_prob_vector)
-
-toy_df3 |> pmap(in_match_win, bestof3 = FALSE,
-                   advantage = TRUE)
-```
-
-
 

@@ -60,5 +60,10 @@ comp_glm(point_winner ~ -1, data = tennis_point,
 ## and the estimated probability is:
 exp((0.580 + 0.756) - 0.230) / (1 + exp((0.580 + 0.756) - 0.230))
 
+expit <- function(x) {
+  exp(x) / (1 + exp(x))
+}
+expit((0.580 + 0.756) - 0.230)
+
 ## James's version will make it much easier to snag both
 ## the predicted log odds and the standard error (on the log odds scale)

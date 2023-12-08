@@ -1,3 +1,13 @@
+
+
+## November 9
+
+1. Clean up files in repo (delete data sets).
+
+2. Review the code that was sent in previous week.
+
+3. Get match data so that each row is a point.
+
 ## October 26
 
 1. Fix set issue.

@@ -1,3 +1,21 @@
+## For February 1
+
+1. Fit the model to your point data with serving effects.
+
+    * with `compr`, point-level data from past matches you think are informative for the current match (e.g. grass leadups plus prior Wimbledon for current Wimbledon)
+
+2. Create a new data frame that has the players for your match of interest (two rows: one when p1 is serving, one when p2 is serving).
+    
+    * put this data frame, along with fitted model from (1) into augment() in (3):
+    
+3. Use `augment()` to get a predicted log odds of p1 winning a point while serving and of p1 winning a point while returning.
+
+    * give you predicted probability of p1 winning a point against p2 and of p2 winning a point against p1 (with standard errors)
+    
+4. Look at code file sent on November 3 (comp_prior).
+
+5. Look at bayes_intro.R and run for a single state of the match (with a particular server at that state).
+
 ## December 15
 
 1. Fit the model to your point data with serving effects.

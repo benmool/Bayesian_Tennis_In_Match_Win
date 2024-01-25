@@ -26,8 +26,6 @@
 
 3. Make plot assuming equal serving probabilities.
 
-
-
 ## October 19
 
 1. Put data from (2) into `in_match_win(c(3), c(2), c(5), c(5),c(0), c(0), c(0.69), c(0.69), bestof3 = T, advantage = F)`

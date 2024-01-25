@@ -60,14 +60,9 @@ piv_longer <- atp_21_23 |> pivot_longer(cols = c("w_srv_w", "w_srv_l", "l_srv_w"
 piv_longer <- uncount(piv_longer, weights = as.numeric(server))
 
 current_df <- piv_longer |> select(1:5, 14, 15)
-```
-
-```{r}
-```
 
 
-
-```{r}
+# add new column to distinguish player1 serving vs player2 serving, will be opposite
 ```
 
 

@@ -1,3 +1,16 @@
+## February 13
+
+1. Wrangle the point level data for Djokovic-Alcaraz.
+
+2. Fit the Bayesian model for a particular stage of the match.
+
+3. Put some point level data wrangling into a function, with input
+    * match_id
+    * player1 name, player2 name, and tournament name
+    
+Output would be one data frame with a column for point winner, a column for point server (1 or 0), in the correct point order, score in points, games, and sets.
+
+
 ## For February 1
 
 1. Fit the model to your point data with serving effects.

@@ -58,11 +58,12 @@ atp_wimbledon_uncount <- uncount(atp_wimbledon_points, weights = as.numeric(serv
   mutate(p1_server = ifelse(pt_server == 1, 1, 0),
          p2_server = ifelse(pt_server == 0, 1, 0)) |>
   # reorganize columns
-  select(winner_name, loser_name, pt_winner, p1_server, p2_server, everything())
+  select(winner_name, loser_name, pt_winner, p1_server, p2_server, everything()) |>
+  rename(player1 = winner_name, player2 = loser_name)
 
 # Now fit the model to your point data with serving effects
 comp_mod <- comp_glm(pt_winner ~ -1, data = atp_wimbledon_uncount,
-                             p1 = "winner_name", p2 = "loser_name",
+                             p1 = "player1", p2 = "player2",
                              p1_effects = ~ p1_server, p2_effects = ~ p2_server,
                              ref_player = "Milos Raonic")
 
@@ -72,32 +73,26 @@ prior_dist_df <- comp_mod |>
   print(n = Inf)
 # view output
 prior_dist_df
-
-# filter prior to have only Djokovic and Alcaraz
-# ND_CA_prior <- comp_mod |> filter(term == "`Novak Djokovic`" | term == "`Carlos Alcaraz`")
 ```
 
 Create data frame that has Alcaraz and Djokovic
 ```{r}
 # 2. Create a new data frame that has the players for your match of interest (two rows: one when p1 is serving, one when p2 is serving). 2X2
 match_data <- data.frame(
-  "Novak Djokovic" = c(1, 0),
-  "Carlos Alcaraz" = c(0, 1)) |> 
-  setNames(c("Novak Djokovic", "Carlos Alcaraz"))
+  player1 = c("Novak Djokovic", "Novak Djokovic"),
+  player2 = c("Carlos Alcaraz", "Carlos Alcaraz"),
+  p1_server = c(1, 0),
+  p2_server = c(0, 1))
 ```
 
 Use `augment()` to get a predicted log odds of p1 winning a point while serving and of p1 winning a point while returning.
 ```{r}
-predicted_log_odds <- augment(comp_mod, newdata = match_data) |>
-  select(player, term, .fitted) |>
-  spread(term, .fitted)
+aug_mod <- aug_mod(newdata = match_data, comp_mod = comp_mod)
+aug_mod
 ```
-
 
 ```{r}
-summary(comp_mod)
-augment(comp_mod) ## need to clean up names
-augment(comp_mod) |> names()
-
+library(rstanarm)
 ```
+
 

@@ -8,6 +8,9 @@ library(tidyverse)
 library(compr)
 library(broom)
 library(dplyr)
+library(readr)
+library(deuce)
+library(purr)
 
 # Source the functions
 source("comp_prior_start.R")
@@ -26,6 +29,7 @@ atp_wimbledon_prior <- atp_22_23 |>
   mutate(tourney_date = lubridate::ymd(tourney_date)) |>
   filter(tourney_name == "Wimbledon" |
            (surface == "Grass" & tourney_date <= "2023-07-03" & tourney_date >= "2023-01-01"))
+# TODO remove final from prior dist
 
 # Put the relevant match data into point format
 atp_wimbledon_points <- atp_wimbledon_prior |>
@@ -89,10 +93,89 @@ Use `augment()` to get a predicted log odds of p1 winning a point while serving 
 ```{r}
 aug_mod <- aug_mod(newdata = match_data, comp_mod = comp_mod)
 aug_mod
+
+expit(0.7624800)
+expit(-0.5603895)
+# always looking at P1 probability
 ```
+
+Let's fit the Bayesian model for a single state of the match:
+Let's look right at the start of the second set tiebreak, after Djokovic has won the first set 6-1, and just held to force a second set tiebreak.
 
 ```{r}
 library(rstanarm)
+
+# get ALcaraz vs Djokovic point level data for the 2023 Wimbledon final
+# start by getting all point data for 2023 Wimbledon
+wimbledon23 <- readr::read_csv("2023-wimbledon-points.csv")
+# filter for Alcaraz vs Djokovic match-ID
+alcaraz_djokovic <- wimbledon23 |>
+  dplyr::filter(match_id == "2023-wimbledon-1701") |>
+  # now use SetWinner variable to change P1GamesWon and P2GamesWon to 0 for these rows
+  mutate(P1GamesWon = ifelse(SetWinner != 0, 0, P1GamesWon),
+         P2GamesWon = ifelse(SetWinner != 0, 0, P2GamesWon))
+
+# check to see if P1GamesWon and P2GamesWon are 0 for all rows where SetWinner != 0
+alcaraz_djokovic |> filter(SetWinner != 0)
+
+# NOTE: Player 1 is Alcaraz and Player 2 is Djokovic
+
+alcaraz_djokovic_condensed <- alcaraz_djokovic |>
+  select(PointWinner,
+         P1Score,
+         P2Score,
+         P1GamesWon,
+         P2GamesWon,
+         SetWinner,
+         PointServer) |>
+  mutate(P1Score = ifelse(P1Score == "AD", 4, P1Score),
+         P2Score = ifelse(P2Score == "AD", 4, P2Score),
+         P1PointsWon = as.numeric(P1Score),
+         P2PointsWon = as.numeric(P2Score)) |>
+  mutate(P1PointsWon = case_when(P1Score == 0 ~ 0,
+                                 P1Score == 15 ~ 1,
+                                 P1Score == 30 ~ 2,
+                                 P1Score == 40 ~ 3,
+                                 TRUE ~ P1PointsWon),
+         P2PointsWon = case_when(P2Score == 0 ~ 0,
+                                 P2Score == 15 ~ 1,
+                                 P2Score == 30 ~ 2,
+                                 P2Score == 40 ~ 3,
+                                 TRUE ~ P2PointsWon)) |>
+  mutate(pt_number = row_number())
+
+# create a data frame for Djokovic serving and one for Alcaraz serving
+djokovic_serving <- alcaraz_djokovic_condensed |>
+  filter(PointServer == 2)
+alcaraz_serving <- alcaraz_djokovic_condensed |>
+  filter(PointServer == 1)
+
+# slice the data to the start of the second set tiebreak
+match_state_df <- djokovic_serving |>
+  slice(1:68) |>
+  mutate(p1_server = 0,
+         p2_server = 1)
+
+# add player1 and player2 columns
+# also create indicator variables that they are serving (2 columns)
+match_state_df <- match_state_df |>
+  mutate(player1 = "Carlos Alcaraz",
+         player2 = "Novak Djokovic") |>
+# also create indicator if serving player won the point
+  mutate(server_won = ifelse(PointWinner == 2, 1, 0))
+
+# fit the model to the data
+comp_mod_match_state <- comp_glm(server_won ~ -1, data = match_state_df,
+                                  p1 = "player1", p2 = "player2",
+                                  p1_effects = ~ p1_server, p2_effects = ~ p2_server,
+                                  ref_player = "Carlos Alcaraz")
+
+prior_dist_df <- comp_mod_match_state |>
+  broom::tidy() |>
+  print(n = Inf)
+# view output
+prior_dist_df
 ```
 
+Pull data from points csv similar to alcaraz v sinner
 

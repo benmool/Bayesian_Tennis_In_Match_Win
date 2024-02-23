@@ -10,10 +10,11 @@ library(broom)
 library(dplyr)
 library(readr)
 library(deuce)
-library(purr)
 
 # Source the functions
 source("comp_prior_start.R")
+source("bayes_intro.R")
+source("wrangle_point_level_data.R")
 ```
 
 We are going to look at the Alcaraz vs Djokovic 2023 Wimbledon Final. Let's include all grass court matches since the start of Wimbledon the year before in 2022.
@@ -23,6 +24,8 @@ ext_vec <- c("atp_matches_2022.csv",
              "atp_matches_2023.csv")
 atp_22_23 <- purrr::map(ext_vec, read_matches) |>
   bind_rows()
+
+test <- read_matches("atp_matches_2022.csv")
 
 # Now filter for relevant matches
 atp_wimbledon_prior <- atp_22_23 |>
@@ -76,7 +79,7 @@ prior_dist_df <- comp_mod |>
   broom::tidy() |>
   print(n = Inf)
 # view output
-prior_dist_df
+prior_dist_df |> filter(term == "`Novak Djokovic`" | term == "`Carlos Alcaraz`") 
 ```
 
 Create data frame that has Alcaraz and Djokovic
@@ -100,11 +103,8 @@ expit(-0.5603895)
 ```
 
 Let's fit the Bayesian model for a single state of the match:
-Let's look right at the start of the second set tiebreak, after Djokovic has won the first set 6-1, and just held to force a second set tiebreak.
-
 ```{r}
 library(rstanarm)
-
 # get ALcaraz vs Djokovic point level data for the 2023 Wimbledon final
 # start by getting all point data for 2023 Wimbledon
 wimbledon23 <- readr::read_csv("2023-wimbledon-points.csv")
@@ -119,7 +119,6 @@ alcaraz_djokovic <- wimbledon23 |>
 alcaraz_djokovic |> filter(SetWinner != 0)
 
 # NOTE: Player 1 is Alcaraz and Player 2 is Djokovic
-
 alcaraz_djokovic_condensed <- alcaraz_djokovic |>
   select(PointWinner,
          P1Score,
@@ -144,12 +143,17 @@ alcaraz_djokovic_condensed <- alcaraz_djokovic |>
                                  TRUE ~ P2PointsWon)) |>
   mutate(pt_number = row_number())
 
+alcaraz_djokovic_condensed |> filter(PointWinner == 0)
+
 # create a data frame for Djokovic serving and one for Alcaraz serving
 djokovic_serving <- alcaraz_djokovic_condensed |>
   filter(PointServer == 2)
 alcaraz_serving <- alcaraz_djokovic_condensed |>
   filter(PointServer == 1)
+```
 
+Let's look right at the start of the second set tiebreak, after Djokovic has won the first set 6-1, and just held to force a second set tiebreak.
+```{r}
 # slice the data to the start of the second set tiebreak
 match_state_df <- djokovic_serving |>
   slice(1:68) |>
@@ -164,18 +168,17 @@ match_state_df <- match_state_df |>
 # also create indicator if serving player won the point
   mutate(server_won = ifelse(PointWinner == 2, 1, 0))
 
-# fit the model to the data
-comp_mod_match_state <- comp_glm(server_won ~ -1, data = match_state_df,
-                                  p1 = "player1", p2 = "player2",
-                                  p1_effects = ~ p1_server, p2_effects = ~ p2_server,
-                                  ref_player = "Carlos Alcaraz")
+# original Djokovic probability
+expit(0.532) # 0.6299495
 
-prior_dist_df <- comp_mod_match_state |>
-  broom::tidy() |>
-  print(n = Inf)
-# view output
-prior_dist_df
+# fit the model to the data
+stan_glm_fit <- stan_glm(server_won ~ 1, data = match_state_df,
+                         family = binomial,
+                         prior_intercept = normal(0.532, 0.145),
+                         seed = 123)
+# new Djokovic probability
+coef(stan_glm_fit) |> expit() # 0.6337828
 ```
 
-Pull data from points csv similar to alcaraz v sinner
+
 

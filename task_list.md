@@ -1,3 +1,11 @@
+## February 29
+
+1. Loop through points in Bayesian model twice.
+
+2. Combine the two data sets, arranging by point number.
+
+3. Think about format needed for match_win_predict() function from the deuce package.
+
 ## February 13
 
 1. Wrangle the point level data for Djokovic-Alcaraz.

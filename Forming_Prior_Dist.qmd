@@ -82,24 +82,44 @@ prior_dist_df <- comp_mod |>
 prior_dist_df |> filter(term == "`Novak Djokovic`" | term == "`Carlos Alcaraz`") 
 ```
 
-Create data frame that has Alcaraz and Djokovic
+Get probabilities of Djokovic winning a point while serving and while returning
 ```{r}
-# 2. Create a new data frame that has the players for your match of interest (two rows: one when p1 is serving, one when p2 is serving). 2X2
-match_data <- data.frame(
+# Create data frame that has Alcaraz and Djokovic
+match_data_djok <- data.frame(
   player1 = c("Novak Djokovic", "Novak Djokovic"),
   player2 = c("Carlos Alcaraz", "Carlos Alcaraz"),
   p1_server = c(1, 0),
   p2_server = c(0, 1))
-```
 
-Use `augment()` to get a predicted log odds of p1 winning a point while serving and of p1 winning a point while returning.
-```{r}
-aug_mod <- aug_mod(newdata = match_data, comp_mod = comp_mod)
-aug_mod
 
+# Use `augment()` to get a predicted log odds of p1 winning a point while serving and of p1 winning a point while returning.
+aug_mod_djok <- aug_mod(newdata = match_data_djok, comp_mod = comp_mod)
+aug_mod_djok
+
+# probability djokovic wins a point on serve
 expit(0.7624800)
+# probability djokovic wins a point on return
 expit(-0.5603895)
 # always looking at P1 probability
+```
+
+Get probabilities of Alcaraz winning a point while serving and while returning
+```{r}
+# Create data frame that has Alcaraz and Djokovic
+match_data_alc <- data.frame(
+  player1 = c("Carlos Alcaraz", "Carlos Alcaraz"),
+  player2 = c("Novak Djokovic", "Novak Djokovic"),
+  p1_server = c(1, 0),
+  p2_server = c(0, 1))
+
+# Use `augment()` to get a predicted log odds of p1 winning a point while serving and of p1 winning a point while returning.
+aug_mod_alc <- aug_mod(newdata = match_data_alc, comp_mod = comp_mod)
+aug_mod_alc
+
+# probability Alcaraz wins a point on serve
+expit(0.5603895)
+# probability Alcaraz wins a point on return
+expit(-0.7624800)
 ```
 
 Let's fit the Bayesian model for a single state of the match:
@@ -107,49 +127,13 @@ Let's fit the Bayesian model for a single state of the match:
 library(rstanarm)
 # get ALcaraz vs Djokovic point level data for the 2023 Wimbledon final
 # start by getting all point data for 2023 Wimbledon
-wimbledon23 <- readr::read_csv("2023-wimbledon-points.csv")
-# filter for Alcaraz vs Djokovic match-ID
-alcaraz_djokovic <- wimbledon23 |>
-  dplyr::filter(match_id == "2023-wimbledon-1701") |>
-  # now use SetWinner variable to change P1GamesWon and P2GamesWon to 0 for these rows
-  mutate(P1GamesWon = ifelse(SetWinner != 0, 0, P1GamesWon),
-         P2GamesWon = ifelse(SetWinner != 0, 0, P2GamesWon))
-
-# check to see if P1GamesWon and P2GamesWon are 0 for all rows where SetWinner != 0
-alcaraz_djokovic |> filter(SetWinner != 0)
 
 # NOTE: Player 1 is Alcaraz and Player 2 is Djokovic
-alcaraz_djokovic_condensed <- alcaraz_djokovic |>
-  select(PointWinner,
-         P1Score,
-         P2Score,
-         P1GamesWon,
-         P2GamesWon,
-         SetWinner,
-         PointServer) |>
-  mutate(P1Score = ifelse(P1Score == "AD", 4, P1Score),
-         P2Score = ifelse(P2Score == "AD", 4, P2Score),
-         P1PointsWon = as.numeric(P1Score),
-         P2PointsWon = as.numeric(P2Score)) |>
-  mutate(P1PointsWon = case_when(P1Score == 0 ~ 0,
-                                 P1Score == 15 ~ 1,
-                                 P1Score == 30 ~ 2,
-                                 P1Score == 40 ~ 3,
-                                 TRUE ~ P1PointsWon),
-         P2PointsWon = case_when(P2Score == 0 ~ 0,
-                                 P2Score == 15 ~ 1,
-                                 P2Score == 30 ~ 2,
-                                 P2Score == 40 ~ 3,
-                                 TRUE ~ P2PointsWon)) |>
-  mutate(pt_number = row_number())
+both_serving_df <- wrangle_point_level(ext = "2023-wimbledon-points.csv",
+                               ID = "2023-wimbledon-1701")
 
-alcaraz_djokovic_condensed |> filter(PointWinner == 0)
-
-# create a data frame for Djokovic serving and one for Alcaraz serving
-djokovic_serving <- alcaraz_djokovic_condensed |>
-  filter(PointServer == 2)
-alcaraz_serving <- alcaraz_djokovic_condensed |>
-  filter(PointServer == 1)
+alcaraz_serving <- both_serving_df[[1]]
+djokovic_serving <- both_serving_df[[2]]
 ```
 
 Let's look right at the start of the second set tiebreak, after Djokovic has won the first set 6-1, and just held to force a second set tiebreak.
@@ -169,15 +153,107 @@ match_state_df <- match_state_df |>
   mutate(server_won = ifelse(PointWinner == 2, 1, 0))
 
 # original Djokovic probability
-expit(0.532) # 0.6299495
+expit(0.7624800) # 0.6818919
 
 # fit the model to the data
+x <- Sys.time()
 stan_glm_fit <- stan_glm(server_won ~ 1, data = match_state_df,
                          family = binomial,
-                         prior_intercept = normal(0.532, 0.145),
+                         prior_intercept = normal(0.7624800, 0.08390474),
                          seed = 123)
+y <- Sys.time()
 # new Djokovic probability
-coef(stan_glm_fit) |> expit() # 0.6337828
+coef(stan_glm_fit) |> expit() # 0.6786362
+```
+
+Loop through Djokovic serving and obtain probabilities he wins a point on serve at each point in the match
+```{r}
+djok_niter <- djokovic_serving |> nrow()
+djok_prob_store <- double()
+
+djokovic_serving <- djokovic_serving |>
+  mutate(player1 = "Carlos Alcaraz",
+         player2 = "Novak Djokovic") |>
+# also create indicator if serving player won the point
+  mutate(server_won = ifelse(PointWinner == 2, 1, 0))
+
+for (i in 1:djok_niter) {
+  mod <- stan_glm(server_won ~ 1, data = djokovic_serving |> slice(1:i),
+                         family = binomial,
+                         prior_intercept = normal(0.7624800, 0.08390474),
+                         seed = 123)
+  djok_prob_store[i] <- coef(mod) |> expit()
+}
+# observe the probabilities generated
+djok_prob_store
+# add probabilities to the data frame
+djokovic_serving <- djokovic_serving |>
+  mutate(djok_wserv_prob = format(djok_prob_store, nsmall = 7))
+```
+
+Loop through Alcaraz serving and obtain probabilities he wins a point on serve at each point in the match
+```{r}
+alc_niter <- alcaraz_serving |> nrow()
+alc_prob_store <- double()
+
+alcaraz_serving <- alcaraz_serving |>
+  mutate(player1 = "Carlos Alcaraz",
+         player2 = "Novak Djokovic") |>
+# also create indicator if serving player won the point
+  mutate(server_won = ifelse(PointWinner == 1, 1, 0))
+
+for (i in 1:alc_niter) {
+  mod <- stan_glm(server_won ~ 1, data = alcaraz_serving |> slice(1:i),
+                         family = binomial,
+                         prior_intercept = normal(0.5603895, 0.08379219),
+                         seed = 123)
+  alc_prob_store[i] <- coef(mod) |> expit()
+}
+# observe all probabilities generated
+alc_prob_store
+# add probabilities to the data frame
+alcaraz_serving <- alcaraz_serving |> 
+  mutate(alc_wserv_prob = format(alc_prob_store, nsmall = 7))
+```
+
+Combine the data frames and arrange by point number
+```{r}
+# combine the data frames
+combined_df <- bind_rows(djokovic_serving, alcaraz_serving) |>
+  arrange(pt_number) |>
+  select(pt_number, player1, player2, PointServer, PointWinner, server_won,
+         djok_wserv_prob, alc_wserv_prob, everything())
+
+# observe the data frame
+combined_df
+
+# observe the probabilities
+combined_df |> select(djok_wserv_prob, alc_wserv_prob) |>
+  print(n = 20)
+```
+
+Don't believe this is the correct way but:
+```{r}
+test <- data.frame(
+  player1 = "Carlos Alcaraz",
+  player2 = "Novak Djokovic",
+  djok_serv_prob = c(.7, .65, .60, .55, .50, NA, NA, NA, NA, .65),
+  alc_serv_prob = c(NA, NA, NA, NA, NA, .55, .60, .65, .70, NA))
+
+test
+
+test_filled <- test %>%
+  fill(djok_serv_prob, alc_serv_prob, .direction = "up")
+
+test_filled
+
+# fill in the missing probabilities with the next known probability
+combined_filled <- combined_df |>
+  fill(djok_wserv_prob, alc_wserv_prob, .direction = "up")
+```
+
+```{r}
+
 ```
 
 

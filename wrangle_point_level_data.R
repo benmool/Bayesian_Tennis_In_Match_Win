@@ -1,16 +1,16 @@
 library(tidyverse)
+library(readr)
 
 wrangle_point_level <- function(ext = "2023-wimbledon-points.csv",
-                                match_id = "2023-wimbledon-1701") {
-  df <- readr::read_csv(paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/",
-                               ext),
-                        col_types = list(match_num = col_character()))
-  df <- df |> dplyr::filter(match_id == match_id) |>
+                                ID = "2023-wimbledon-1701") {
+  df <- readr::read_csv(paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_slam_pointbypoint/master/",
+                               ext))
+  df <- df |> dplyr::filter(match_id == ID) |>
   
     dplyr::mutate(P1GamesWon = ifelse(SetWinner != 0, 0, P1GamesWon),
                   P2GamesWon = ifelse(SetWinner != 0, 0, P2GamesWon)) |>
     
-    filter(PointWinner == 0)
+    filter(PointWinner != 0)
   
   df <- df |> select(PointWinner,
                      P1Score,

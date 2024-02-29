@@ -1,3 +1,13 @@
+## March 7
+
+1. Finish up third task from last week.
+
+2. Use pmap() and in_match_win() to create a line plot of win probability through time.
+
+3. Write functions to achieve data wrangling tasks for other potential matches.
+
+4. Look over in_match_win() code.
+
 ## February 29
 
 1. Loop through points in Bayesian model twice.

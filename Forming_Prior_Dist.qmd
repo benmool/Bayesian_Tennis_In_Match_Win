@@ -25,8 +25,6 @@ ext_vec <- c("atp_matches_2022.csv",
 atp_22_23 <- purrr::map(ext_vec, read_matches) |>
   bind_rows()
 
-test <- read_matches("atp_matches_2022.csv")
-
 # Now filter for relevant matches
 atp_wimbledon_prior <- atp_22_23 |>
   mutate(tourney_date = lubridate::ymd(tourney_date)) |>
@@ -96,11 +94,25 @@ match_data_djok <- data.frame(
 aug_mod_djok <- aug_mod(newdata = match_data_djok, comp_mod = comp_mod)
 aug_mod_djok
 
+test <- create_prior(ext = c("atp_matches_2022.csv",
+                                 "atp_matches_2023.csv"),
+                         tourn_name = "Wimbledon",
+                         surf = "Grass",
+                         start_date = "2023-07-03",
+                         end_date = "2023-01-01",
+                         player1 = "Carlos Alcaraz",
+                         player2 = "Novak Djokovic")
+
 # probability djokovic wins a point on serve
 expit(0.7624800)
 # probability djokovic wins a point on return
 expit(-0.5603895)
 # always looking at P1 probability
+
+# so, probability alcaraz wins a point on serve
+1 - expit(-0.5603895)
+# probability alcaraz wins a point on return
+1 - expit(0.7624800)
 ```
 
 Get probabilities of Alcaraz winning a point while serving and while returning
@@ -187,8 +199,8 @@ for (i in 1:djok_niter) {
 # observe the probabilities generated
 djok_prob_store
 # add probabilities to the data frame
-djokovic_serving <- djokovic_serving |>
-  mutate(djok_wserv_prob = format(djok_prob_store, nsmall = 7))
+djokovic_serving <- djokovic_serving |> 
+  mutate(djok_wserv_prob = djok_prob_store)
 ```
 
 Loop through Alcaraz serving and obtain probabilities he wins a point on serve at each point in the match
@@ -213,7 +225,7 @@ for (i in 1:alc_niter) {
 alc_prob_store
 # add probabilities to the data frame
 alcaraz_serving <- alcaraz_serving |> 
-  mutate(alc_wserv_prob = format(alc_prob_store, nsmall = 7))
+  mutate(alc_wserv_prob = alc_prob_store)
 ```
 
 Combine the data frames and arrange by point number
@@ -232,29 +244,171 @@ combined_df |> select(djok_wserv_prob, alc_wserv_prob) |>
   print(n = 20)
 ```
 
-Don't believe this is the correct way but:
+Fill in the missing probabilities with the previously known probability
 ```{r}
-test <- data.frame(
-  player1 = "Carlos Alcaraz",
-  player2 = "Novak Djokovic",
-  djok_serv_prob = c(.7, .65, .60, .55, .50, NA, NA, NA, NA, .65),
-  alc_serv_prob = c(NA, NA, NA, NA, NA, .55, .60, .65, .70, NA))
-
-test
-
-test_filled <- test %>%
-  fill(djok_serv_prob, alc_serv_prob, .direction = "up")
-
-test_filled
+# Manually insert a probability for Alcaraz winning a point on serve in the first row
+combined_df[1, "alc_wserv_prob"] <- expit(0.5603895)
 
 # fill in the missing probabilities with the next known probability
 combined_filled <- combined_df |>
-  fill(djok_wserv_prob, alc_wserv_prob, .direction = "up")
+  fill(djok_wserv_prob, alc_wserv_prob, .direction = "down") |>
+  print(n = 30)
+# observe probabilities now
+combined_filled |> select(djok_wserv_prob, alc_wserv_prob) |>
+  print(n = 20)
 ```
 
+Now using in_match_win(), need to split the data frame into two separate data frames, one for Djokovic serving and one for Alcaraz serving again
 ```{r}
 
+
+# djokovic serving
+djok_serving <- combined_filled |>
+  filter(PointServer == 2) |>
+  mutate(alc_wret_prob = 1 - djok_wserv_prob)
+# alcara serving
+alc_serving <- combined_filled |>
+  filter(PointServer == 1) |>
+  mutate(djok_wret_prob = 1 - alc_wserv_prob)
+
+djok_serving_f <- tibble(
+  point_a = djok_serving$P2PointsWon,
+  point_b = djok_serving$P1PointsWon,
+  game_a = djok_serving$P2GamesWon,
+  game_b = djok_serving$P1GamesWon,
+  set_a = cumsum(djok_serving$SetWinner == 2),
+  set_b = cumsum(djok_serving$SetWinner == 1),
+  server.prob = djok_serving$djok_wserv_prob,
+  returner.prob = djok_serving$alc_wret_prob
+)
+
+alc_serving_f <- tibble(
+  point_a = alc_serving$P1PointsWon,
+  point_b = alc_serving$P2PointsWon,
+  game_a = alc_serving$P1GamesWon,
+  game_b = alc_serving$P2GamesWon,
+  set_a = cumsum(alc_serving$SetWinner == 1),
+  set_b = cumsum(alc_serving$SetWinner == 2),
+  server.prob = alc_serving$alc_wserv_prob,
+  returner.prob = alc_serving$djok_wret_prob
+)
+
+# calculate probability of Djokovic winning throughout the match
+djok_win_prob <- djok_serving_f |> pmap(in_match_win, bestof3 = FALSE,
+                   advantage = FALSE)
+
+# calculate probability of Alcaraz winning throughout the match
+alc_win_prob <- alc_serving_f |> pmap(in_match_win, bestof3 = FALSE,
+                   advantage = FALSE)
+
+
+in_match_win(point_a = 3,
+                 point_b = 6,
+                 game_a = 6,
+                 game_b = 6,
+                 set_a = 2,
+                 set_b = 2,
+                 server.prob = 0.6,
+                 returner.prob = 0.4,
+             bestof3 = FALSE,
+             advantage = FALSE)
 ```
 
 
+
+
+
+
+
+
+
+
+```{r}
+ext = c("atp_matches_2022.csv",
+        "atp_matches_2023.csv")
+tourn_name = "Wimbledon"
+surf = "Grass"
+start_date = "2023-07-03"
+end_date = "2023-01-01"
+player1 = "Carlos Alcaraz"
+player2 = "Novak Djokovic"
+  
+matches <- purrr::map(ext, read_matches) |>
+    bind_rows()
+  
+  # filter for relevant matches
+prior <- matches |>
+    mutate(tourney_date = lubridate::ymd(tourney_date)) |>
+    filter(tourney_name ==  as.character(tourn_name) |
+             (surface == as.character(surf) & 
+                tourney_date <= lubridate::ymd(end_date) & 
+                tourney_date >= lubridate::ymd(start_date)))
+
+atp_wimbledon_prior <- atp_22_23 |>
+  mutate(tourney_date = lubridate::ymd(tourney_date)) |>
+  filter(tourney_name == "Wimbledon" |
+           (surface == "Grass" & tourney_date <= "2023-07-03" & tourney_date >= "2023-01-01"))
+  
+prior_points <- prior |>
+    select(1:3,6,7,9,11,17,19,24,30,32,33,39,41,42,46,48) |>
+    mutate(w_svpt_w = w_1stWon + w_2ndWon,
+           w_svpt_l = w_svpt - w_svpt_w,
+           l_svpt_w = l_1stWon + l_2ndWon,
+           l_svpt_l = l_svpt - l_svpt_w) |>
+    select(winner_name, loser_name, w_svpt_w, w_svpt_l, l_svpt_w, l_svpt_l, match_num,
+           1:5, 7, 9, 16:17) |>
+    pivot_longer(cols = c("w_svpt_w", "w_svpt_l", "l_svpt_w", "l_svpt_l"),
+                 names_to = "won_point",
+                 values_to = "server") |>
+    mutate(pt_winner = recode(
+      won_point,
+      "w_svpt_w" = 1,
+      "w_svpt_l" = 0,
+      "l_svpt_w" = 0,
+      "l_svpt_l" = 1)) |>
+    mutate(pt_server = recode(
+      won_point,
+      "w_svpt_w" = 1,
+      "w_svpt_l" = 1,
+      "l_svpt_w" = 0,
+      "l_svpt_l" = 0)) |>
+    # remove rows where server is NA (walkovers)
+    filter(!is.na(server))
+  
+prior_points_uncount <- uncount(prior_points, weights = as.numeric(server)) |>
+    mutate(p1_server = ifelse(pt_server == 1, 1, 0),
+           p2_server = ifelse(pt_server == 0, 1, 0)) |>
+    # reorganize columns
+    select(winner_name, loser_name, pt_winner, p1_server, p2_server, everything()) |>
+    rename(player1 = winner_name, player2 = loser_name)
+  
+  # Now fit the model to your point data with serving effects
+comp_mod_test <- comp_glm(pt_winner ~ -1, data = prior_points_uncount,
+                       p1 = "player1", p2 = "player2",
+                       p1_effects = ~ p1_server, p2_effects = ~ p2_server,
+                       ref_player = "Milos Raonic")
+  
+  # tidy the model to view its output
+prior_dist_df2 <- comp_mod_test |>
+  broom::tidy() |>
+  print(n = Inf)
+# view output
+prior_dist_df2 |> filter(term == "`Novak Djokovic`" | term == "`Carlos Alcaraz`") 
+  
+match_data <- data.frame(
+  player1 = c("`" + player1 + "`"),
+  player2 = c("`" + player2 + "`"),
+  p1_server = c(1, 0),
+  p2_server = c(0, 1)
+)
+
+match_data <- data.frame(
+  player1 = paste0("`", player1, "`"),
+  player2 = paste0("`", player2, "`"),
+  p1_server = c(1, 0),
+  p2_server = c(0, 1)
+)
+  
+aug_mod <- augment(comp_mod_test, newdata = match_data)
+```
 

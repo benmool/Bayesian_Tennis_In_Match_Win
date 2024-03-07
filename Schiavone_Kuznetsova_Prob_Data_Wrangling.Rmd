@@ -10,11 +10,18 @@ library(tidyverse)
 library(readr)
 library(deuce)
 library(purrr)
+source("wrangle_point_level_data.R")
 ```
 
 Get csv for match data
 ```{r}
 auso11 <- read_csv("2011-ausopen-points.csv")
+
+both_serv_df <- wrangle_point_level(ext = "2011-ausopen-points.csv",
+                                    ID = "2011-ausopen-2402")
+#  NOTE: Player 1 is Kuznetsova and Player 2 is Schiavone.
+kuznetsova_serving2 <- both_serv_df[[1]]
+schiavone_serving2 <- both_serv_df[[2]]
 ```
 
 Select one match from the data (Francesca Schiavone def Svetlana Kuznetsova 6-4, 1-6, 16-14)

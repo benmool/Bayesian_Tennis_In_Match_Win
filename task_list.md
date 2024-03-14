@@ -1,3 +1,14 @@
+## March 28
+
+1. create line plot for djokovic alcaraz 
+
+2. write a few more functions and clean up current existing function.
+
+3. try on a few different other matches and a few women's matches and make the resulting line plot. Can also try adding some background shading to the plot, shading according to the set (so that the background of the plot for set 1 is one colour, set 2 is another colour, etc.). 
+
+4. Look at posterdown <https://github.com/brentthorne/posterdown> and <https://github.com/kaseygwood/slufellow/blob/main/fellow_poster/fellow_poster.Rmd>
+
+
 ## March 14
 
 1. create line plot for djokovic alcaraz 

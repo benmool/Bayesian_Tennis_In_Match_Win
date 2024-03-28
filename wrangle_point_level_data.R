@@ -1,5 +1,6 @@
 library(tidyverse)
 library(readr)
+library(rstanarm)
 
 wrangle_point_level <- function(ext = "2023-wimbledon-points.csv",
                                 ID = "2023-wimbledon-1701") {

@@ -1,3 +1,11 @@
+## April 4
+
+1. Making plot look nice (adding sets as shading, one line, after you decide on a match, can add labels for important points).
+
+2. Messing with prior and making a plot with fixed probabilities at 0.68 for men, 0.6x for women.
+
+3. Start the posterdown template.
+
 ## March 28
 
 1. create line plot for djokovic alcaraz 

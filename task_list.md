@@ -1,3 +1,15 @@
+## April 11
+
+1. Messing with prior and making a plot with fixed probabilities at 0.68 for men, 0.6x for women (and investigate other prior distributions).
+
+2. Start the posterdown template.
+
+3. Tweak plot a little more.
+
+4. Decide on the matches (one men's, one women's).
+
+    * 2015 us open women's semis (Serena Vinci)
+    
 ## April 4
 
 1. Making plot look nice (adding sets as shading, one line, after you decide on a match, can add labels for important points).

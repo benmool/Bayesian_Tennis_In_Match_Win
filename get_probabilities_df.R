@@ -67,7 +67,15 @@ get_probabilities_df <- function(p1_serving_df = alcaraz_serving,
   combined_filled <- combined_df |>
     fill(p1_wserv_prob, p2_wserv_prob, .direction = "down")
   
-  return(combined_filled)
+  combined_final <- combined_filled |>
+    mutate(P1SetsWon = cumsum(SetWinner == 1),
+           P2SetsWon = cumsum(SetWinner == 2))
+  
+  combined_final_cleaned <- combined_final |>
+    select(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,
+           P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon)
+  
+  return(combined_final_cleaned)
 }
   
 

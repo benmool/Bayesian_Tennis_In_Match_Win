@@ -17,8 +17,13 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
   # filter for relevant matches
   prior <- matches |>
     mutate(tourney_date = lubridate::ymd(tourney_date)) |>
-    filter(tourney_name ==  tourn_name |
-             (surface == surf & tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
+    
+    # incorrect filter here, show to higham
+    # filter(tourney_name ==  tourn_name |
+             # (surface == surf & tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
+    filter((tourney_name == tourn_name | surface == surf) &
+           (tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
+  
   
   prior_points <- prior |>
     select(1:3,6,7,9,11,17,19,24,30,32,33,39,41,42,46,48) |>

@@ -247,8 +247,8 @@ plot_df_test |> ggplot(aes(x = pt_number, y = probability)) +
 
 
 ```{r}
-set_boundaries <- plot_df_test %>%
-  group_by(total_sets) %>%
+set_boundaries <- plot_df_test |>
+  group_by(total_sets) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 

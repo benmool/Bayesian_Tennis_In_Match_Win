@@ -125,7 +125,7 @@ recombined_df_test <- rbind(p2_serv_test, p1_serv_test) |>
   arrange(pt_number) |>
   mutate(total_sets = as.factor(P1SetsWon + P2SetsWon)) |>
   # create probability var for just djokovic winning
-  mutate(win_prob_p1 = ifelse(PointServer == 1, probability, 1 - probability))
+  mutate(win_prob_px = ifelse(PointServer == 1, probability, 1 - probability))
 ```
 
 Plot the probability of winning the match for each player
@@ -141,7 +141,7 @@ library(ggplot2)
 
 # plot the probability of winning the match for each player
 plot_df_test |> ggplot(aes(x = pt_number, y = probability)) +
-  geom_line(aes(y = win_prob_p1)) +
+  geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
        y = "Probability of Winning Match",
        title = "Djokovic vs Simon Australian Open R4 2016",
@@ -150,3 +150,4 @@ plot_df_test |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, NA)) +
   theme_bw()
 ```
+

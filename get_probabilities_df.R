@@ -4,10 +4,10 @@ get_probabilities_df <- function(p1_serving_df = alcaraz_serving,
                                  p2_serving_df = djokovic_serving,
                                  p1 = "Carlos Alcaraz",
                                  p2 = "Novak Djokovic",
-                                 p1_original_prob = 0.5603895,
-                                 p1_original_se = 0.08379219,
-                                 p2_original_prob = 0.7624800,
-                                 p2_original_se = 0.08390474) {
+                                 p1_original_prob = 0.6194617,
+                                 p1_original_se = 0.1038723,
+                                 p2_original_prob = 0.6703011,
+                                 p2_original_se = 0.1009560) {
   
   p1_niter <- p1_serving_df |> nrow()
   p1_prob_store <- double()
@@ -28,8 +28,6 @@ get_probabilities_df <- function(p1_serving_df = alcaraz_serving,
   
   p1_serving <- p1_serving |> 
     mutate(p1_wserv_prob = p1_prob_store)
-  
-  
   
   p2_niter <- p2_serving_df |> nrow()
   p2_prob_store <- double()
@@ -73,8 +71,11 @@ get_probabilities_df <- function(p1_serving_df = alcaraz_serving,
   
   combined_final_cleaned <- combined_final |>
     select(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,
-           P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon)
-  
+           P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon) |>
+    mutate(PointServer = case_when(P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 1 ~ 2,
+                                   P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 2 ~ 1,
+                                   TRUE ~ PointServer))
+
   return(combined_final_cleaned)
 }
   

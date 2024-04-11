@@ -9,7 +9,8 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
                          start_date = "2023-07-03",
                          end_date = "2023-01-01",
                          player1 = "Carlos Alcaraz",
-                         player2 = "Novak Djokovic") {
+                         player2 = "Novak Djokovic",
+                         ref_player = "Milos Raonic") {
   
   matches <- purrr::map(ext, read_matches) |>
     bind_rows()
@@ -62,7 +63,7 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
   comp_mod <- comp_glm(pt_winner ~ -1, data = prior_points_uncount,
                        p1 = "player1", p2 = "player2",
                        p1_effects = ~ p1_server, p2_effects = ~ p2_server,
-                       ref_player = "Milos Raonic")
+                       ref_player = ref_player)
   
   match_data <- data.frame(
     player1 = (player1),

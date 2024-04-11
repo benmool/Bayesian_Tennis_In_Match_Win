@@ -1,0 +1,56 @@
+---
+title: "Gauff_Sabalenka_2023USO"
+format: html
+---
+
+```{r}
+#| output: false
+library(tidyverse)
+library(compr)
+library(broom)
+library(dplyr)
+library(readr)
+library(deuce)
+library(ggplot2)
+
+# Source the functions
+source("comp_prior_start.R")
+source("bayes_intro.R")
+source("wrangle_point_level_data.R")
+source("Create_Prior.R")
+source("get_probabilities_df.R")
+source("get_plot_df.R")
+```
+
+We are going to look at the Gauff vs Sabalenka 2022 US Open Finals match. Gauff defeated Sabalenka in 3 sets: 2-6, 6-3, 6-2. We are going to mess around with the prior distribution and see how it changes the predicted win probabilities throughout the match:
+
+  1. First, we will use a prior distribution that includes all hard court matches over the last year, including the 2022 US Open, and all matches of the 2023 US Open prior to the Finals
+
+  2. Then, we will use a prior distribution that only includes hard court matches from the "lead-up" tournaments to the 2022 US Open and the 2022 US Open itself (matches prior to the Finals).
+
+  3. Lastly, we will use a prior distribution that has fixed probabilities for both players and does not update throughout the course of the match.
+  
+#### 1. Using last year's US Open and this year's US Open prior to the Finals
+
+Get probabilities of Gauff winning a point while serving and while returning
+
+```{r}
+aug_mod_gau_large_prior <- create_prior(ext = c("wta_matches_2022.csv",
+                                 "wta_matches_2023.csv"),
+                         tourn_name = "US Open",
+                         surf = "Hard",
+                         start_date = "2022-08-29",
+                         end_date = "2023-09-8",
+                         player1 = "Coco Gauff",
+                         player2 = "Aryna Sabalenka",
+                         ref_player = "Iga Swiatek")
+```
+
+
+#### 2. Using only the "lead-up" tournaments to the 2022 US Open and the 2022 US Open itself
+
+
+
+#### 3. Using fixed probabilities for both players
+
+

@@ -1,17 +1,17 @@
 library(tidyverse)
 library(deuce)
 
-get_plot_df <- function(combined_df = combined_prob_df,
+get_plot_df <- function(combined_df,
                         which_player_prob = 1,
                         best_of_3 = FALSE,
                         advantage = FALSE) {
   
   # Filter for player 1 serving
-  p1_serv <- combined_prob_df |>
+  p1_serv <- combined_df |>
     filter(PointServer == 1)
   
   # Filter for player 2 serving
-  p2_serv <- combined_prob_df |>
+  p2_serv <- combined_df |>
     filter(PointServer == 2)
   
   # Create tibble for player 1 serving to feed into in_match_win

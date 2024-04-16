@@ -43,13 +43,13 @@ aug_mod_sin_large_prior <- create_prior(ext = c("atp_matches_2021.csv",
                          player1 = "Jannik Sinner",
                          player2 = "Carlos Alcaraz",
                          ref_player = "Novak Djokovic")
+# Note that output is always looking at P1 probability
 aug_mod_sin_large_prior
 
 # probability Sinner wins a point on serve
 expit(0.4105508) # 0.6012199
 # probability Sinner wins a point on return
 expit(-0.4896720) #  0.3799708
-# always looking at P1 probability
 
 # Do negation for Alcaraz points
 # probability Alcaraz wins a point on serve
@@ -86,13 +86,13 @@ plot_sin_alc_large_prior <- get_plot_df(combined_df = combined_prob_alc_sin_lp_d
                                         best_of_3 = FALSE,
                                         advantage = FALSE)
 
-set_boundaries_large_prior <- plot_sin_alc_large_prior |>
+set_boundaries_alc_sin_large_prior <- plot_sin_alc_large_prior |>
   group_by(total_sets) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
 plot_sin_alc_large_prior |> ggplot(aes(x = pt_number, y = probability)) +
-  geom_rect(data = set_boundaries, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+  geom_rect(data = set_boundaries_alc_sin_large_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
                                        ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
@@ -136,13 +136,13 @@ Get the point level data for the 2022 US Open Quarterfinal
 both_serving_df <- wrangle_point_level(ext = "2022-usopen-points.csv",
                                ID = "2022-usopen-1503")
 
-sin_serving <- both_serving_df[[1]]
-alc_serving <- both_serving_df[[2]]
+sin_serving_sp <- both_serving_df[[1]]
+alc_serving_sp <- both_serving_df[[2]]
 ```
 
 Get a data frame with the probabilities for each player seving
 ```{r}
-combined_prob_df <- get_probabilities_df(p1_serving_df = sin_serving,
+combined_prob_sin_alc_sp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
                                  p2 = "Carlos Alcaraz",
@@ -154,18 +154,18 @@ combined_prob_df <- get_probabilities_df(p1_serving_df = sin_serving,
 
 Now we can plot the probability of Alcaraz winning the match
 ```{r}
-plot_sin_alc_small_prior <- get_plot_df(combined_df = combined_prob_df, 
+plot_sin_alc_small_prior <- get_plot_df(combined_df = combined_prob_sin_alc_sp_df, 
                         which_player_prob = 2,
                         best_of_3 = FALSE,
                         advantage = FALSE)
 
-set_boundaries_small_prior <- plot_sin_alc_small_prior |>
+set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
   group_by(total_sets) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
 plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
-  geom_rect(data = set_boundaries_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+  geom_rect(data = set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
                                        ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
@@ -186,41 +186,42 @@ Get the point level data
 both_serving_df <- wrangle_point_level(ext = "2022-usopen-points.csv",
                                ID = "2022-usopen-1503")
 
-sin_serving <- both_serving_df[[1]]
-alc_serving <- both_serving_df[[2]]
-
-sin_serving_fixed_prior <- sin_serving |> 
-  mutate(p1_wserv_prob = 0.68) |>
+sin_serving_fp <- both_serving_df[[1]] |> 
   mutate(player1 = "Jannik Sinner",
          player2 = "Carlos Alcaraz") |>
     # also create indicator if serving player won the point
     mutate(server_won = ifelse(PointWinner == 1, 1, 0))
-  
-alc_serving_fixed_prior <- alc_serving |> 
+
+alc_serving_fp <- both_serving_df[[2]] |> 
   mutate(player1 = "Jannik Sinner",
          player2 = "Carlos Alcaraz") |>
     # also create indicator if serving player won the point
     mutate(server_won = ifelse(PointWinner == 2, 1, 0))
 
-combined_sin_alc_fixed_df <- bind_rows(sin_serving_fixed_prior, alc_serving_fixed_prior) |>
+combined_sin_alc_fixed_df <- bind_rows(sin_serving_fp, alc_serving_fp) |>
     arrange(pt_number) |>
   mutate(p1_wserv_prob = 0.68,
          p2_wserv_prob = 0.68) |>
-  select(pt_number, player1, player2, PointServer, PointWinner, server_won,
-           p1_wserv_prob, p2_wserv_prob, everything())
+  mutate(P1SetsWon = cumsum(SetWinner == 1),
+           P2SetsWon = cumsum(SetWinner == 2)) |>
+  select(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,
+         P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon) |>
+  mutate(PointServer = case_when(P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 1 ~ 2,
+                                 P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 2 ~ 1,
+                                 TRUE ~ PointServer))
 
 plot_sin_alc_fixed_prior <- get_plot_df(combined_df = combined_sin_alc_fixed_df, 
                         which_player_prob = 2,
                         best_of_3 = FALSE,
                         advantage = FALSE)
 
-set_boundaries_fixed_prior <- plot_sin_alc_fixed_prior |>
+set_boundaries_alc_sin_fixed_prior <- plot_sin_alc_fixed_prior |>
   group_by(total_sets) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
 plot_sin_alc_fixed_prior |> ggplot(aes(x = pt_number, y = probability)) +
-  geom_rect(data = set_boundaries_fixed_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+  geom_rect(data = set_boundaries_alc_sin_fixed_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
                                        ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
@@ -231,4 +232,3 @@ plot_sin_alc_fixed_prior |> ggplot(aes(x = pt_number, y = probability)) +
        color = "Server") +
   theme_bw()
 ```
-

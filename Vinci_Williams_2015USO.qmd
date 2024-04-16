@@ -1,0 +1,55 @@
+---
+title: "Vinci_Williams2015USO"
+format: html
+---
+
+```{r}
+#| output: false
+library(tidyverse)
+library(compr)
+library(broom)
+library(dplyr)
+library(readr)
+library(deuce)
+library(ggplot2)
+
+# Source the functions
+source("comp_prior_start.R")
+source("bayes_intro.R")
+source("wrangle_point_level_data.R")
+source("Create_Prior.R")
+source("get_probabilities_df.R")
+source("get_plot_df.R")
+```
+
+
+
+NOT COMPLETE
+```{r}
+aug_mod_vinci_large_prior <- create_prior(ext = c("wta_matches_2014.csv",
+                                 "wta_matches_2015.csv"),
+                         tourn_name = "US Open",
+                         surf = "Hard",
+                         start_date = "2022-08-29",
+                         end_date = "2023-09-8",
+                         player1 = "Serena Williams",
+                         player2 = "Roberta Vinci",
+                         ref_player = "Venus Williams")
+# Note that output is always looking at P1 probability
+aug_mod_gau_large_prior
+
+# probability Williams wins a point on serve
+expit(0.2616522) # 0.5650424
+# probability Williams wins a point on return
+expit(-0.3578947) # 0.4114693
+
+# Do negation for Vinci points
+# probability Vinci wins a point on serve
+expit(0.3578947) # 0.5885307
+# probability Vinci wins a point on return
+expit(-0.2616522) # 0.4349576
+```
+
+
+
+MAtch ID: 2015-usopen-2601

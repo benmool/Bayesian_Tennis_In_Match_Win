@@ -1,9 +1,17 @@
 library(tidyverse)
 
 read_matches <- function(ext = "atp_matches_2023.csv") {
-  df <- readr::read_csv(paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/",
-                               ext),
-                        col_types = list(match_num = col_character()))
+  if (substr(ext, 1, 3) == "atp") {
+    url <- paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/", ext)
+  } else if (substr(ext, 1, 3) == "wta") {
+    url <- paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master/", ext)
+  } else {
+    stop("Invalid extension. Extension must start with 'atp' or 'wta'.")
+  }
+  
+  df <- readr::read_csv(url, col_types = list(match_num = col_character())) |>
+    mutate(winner_seed = as.numeric(winner_seed)) |>
+    mutate(loser_seed = as.numeric(loser_seed))
   return(df)
 }
 

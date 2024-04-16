@@ -30,24 +30,24 @@ aug_mod_alc <- create_prior(ext = c("atp_matches_2022.csv",
                                  "atp_matches_2023.csv"),
                          tourn_name = "Wimbledon",
                          surf = "Grass",
-                         start_date = "2023-01-01",
+                         start_date = "2022-06-27",
                          end_date = "2023-07-15",
                          player1 = "Carlos Alcaraz",
                          player2 = "Novak Djokovic",
                          ref_player = "Milos Raonic")
+# always looking at P1 probability
 aug_mod_alc
 
 # probability Alcaraz wins a point on serve
-expit(0.6194617) # 0.6500961
+expit(0.5852548) # 0.6422756
 # probability Alcaraz wins a point on return
-expit(-0.6703011) #  0.3384294
-# always looking at P1 probability
+expit(-0.7455354) #  0.3217949
 
 # Do negation for Djokovic points
 # probability Djoko wins a point on serve
-expit(0.6703011) # 0.6615706
+expit(0.7455354) # 0.6782051
 # probability Djoko wins a point on return
-expit(-0.6194617) # 0.3499039
+expit(-0.5852548) # 0.3577244
 ```
 
 Get the point level data for the 2023 Wimbledon final
@@ -65,30 +65,30 @@ djokovic_serving <- both_serving_df[[2]]
 
 Get a data frame with the probabilities for each player seving
 ```{r}
-combined_prob_df <- get_probabilities_df(p1_serving_df = alcaraz_serving,
+combined_alc_djok_prob_df <- get_probabilities_df(p1_serving_df = alcaraz_serving,
                                  p2_serving_df = djokovic_serving,
                                  p1 = "Carlos Alcaraz",
                                  p2 = "Novak Djokovic",
-                                 p1_original_prob = 0.6194617,
-                                 p1_original_se = 0.1038723,
-                                 p2_original_prob = 0.6703011,
-                                 p2_original_se = 0.1009560)
+                                 p1_original_prob = 0.5852548,
+                                 p1_original_se = 0.08343705,
+                                 p2_original_prob = 0.7455354,
+                                 p2_original_se = 0.08337572)
 ```
 
 Now we can plot the probability of Alcaraz winning the match
 ```{r}
-plot_df <- get_plot_df(combined_df = combined_prob_df, 
+plot_alc_djok_df <- get_plot_df(combined_df = combined_alc_djok_prob_df, 
                        which_player_prob = 1,
                        best_of_3 = FALSE,
                        advantage = FALSE)
 
-set_boundaries <- plot_df |>
+set_alc_djok_boundaries <- plot_alc_djok_df |>
   group_by(total_sets) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
-plot_df |> ggplot(aes(x = pt_number, y = probability)) +
-  geom_rect(data = set_boundaries, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+plot_alc_djok_df |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = set_alc_djok_boundaries, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
                                        ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
@@ -96,5 +96,6 @@ plot_df |> ggplot(aes(x = pt_number, y = probability)) +
        title = "Alcaraz vs Djokovic Wimbledon Final 2023",
        subtitle = "Probability of Alcaraz Winning Match",
        color = "Server") +
+  coord_cartesian(ylim = c(0, 1)) +
   theme_bw()
 ```

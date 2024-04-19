@@ -233,5 +233,6 @@ plot_gauff_sab_fixed_prior |> ggplot(aes(x = pt_number, y = probability)) +
        subtitle = "Probability of Gauff Winning Match",
        caption = "Prior fixes win probability on serve at 0.60 for both players",
        color = "Server") +
+  coord_cartesian(ylim = c(0,1)) +
   theme_bw()
 ```

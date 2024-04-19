@@ -38,7 +38,7 @@ atp_us_prior <- atp_21_23 |>
 
 ## james is working on this package in his own repository: you'll likely
 ## be changing to his version once he gets it working
-devtools::install_github(repo = "https://github.com/highamm/compr")
+# devtools::install_github(repo = "https://github.com/highamm/compr")
 
 library(compr)
 

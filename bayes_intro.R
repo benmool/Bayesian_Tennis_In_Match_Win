@@ -24,5 +24,5 @@ stan_glm1 <- stan_glm(won_or_lost ~ 1,
 
 expit <- function(x) { exp(x) / (1 + exp(x))
 }
-coef(glm1) |> expit()
+# coef(glm1) |> expit()
 coef(stan_glm1) |> expit()

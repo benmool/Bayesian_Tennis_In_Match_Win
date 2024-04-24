@@ -30,13 +30,22 @@ We are going to look at the Gauff vs Sabalenka 2023 US Open Finals match. Gauff 
 
   3. Lastly, we will use a prior distribution that has fixed probabilities for both players and does not update throughout the course of the match.
   
+Get the point level data for the 2023 US Open Finals match between Gauff and Sabalenka
+```{r}
+both_gauff_saba_serving_df <- wrangle_point_level(ext = "2023-usopen-points.csv",
+                               ID = "2023-usopen-2701")
+
+gauff_serving <- both_gauff_saba_serving_df[[1]]
+saba_serving <- both_gauff_saba_serving_df[[2]]
+```
+  
 #### 1. Using last year's US Open and this year's US Open prior to the Finals
 
 Get probabilities of Gauff winning a point while serving and while returning
 ```{r}
 aug_mod_gau_large_prior <- create_prior(ext = c("wta_matches_2022.csv",
                                  "wta_matches_2023.csv"),
-                         tourn_name = "US Open",
+                         tourn_name = "Us Open",
                          surf = "Hard",
                          start_date = "2022-08-29",
                          end_date = "2023-09-8",
@@ -47,24 +56,15 @@ aug_mod_gau_large_prior <- create_prior(ext = c("wta_matches_2022.csv",
 aug_mod_gau_large_prior
 
 # probability Gauff wins a point on serve
-expit(0.2616522) # 0.5650424
+expit(0.2571936) # 0.5639463
 # probability Gauff wins a point on return
-expit(-0.3578947) # 0.4114693
+expit(-0.3688839) # 0.4088107
 
 # Do negation for Sabalenka points
 # probability Sabalenka wins a point on serve
-expit(0.3578947) # 0.5885307
+expit(0.3688839) # 0.5911893
 # probability Sabalenka wins a point on return
-expit(-0.2616522) # 0.4349576
-```
-
-Get the point level data for the 2023 US Open Finals match between Gauff and Sabalenka
-```{r}
-both_serving_df <- wrangle_point_level(ext = "2023-usopen-points.csv",
-                               ID = "2023-usopen-2701")
-
-gauff_serving <- both_serving_df[[1]]
-saba_serving <- both_serving_df[[2]]
+expit(-0.2571936) # 0.4360537
 ```
 
 Get a data frame with the probabilities for each player seving
@@ -73,10 +73,10 @@ combined_prob_gauff_sab_lp_df <- get_probabilities_df(p1_serving_df = gauff_serv
                                  p2_serving_df = saba_serving,
                                  p1 = "Coco Gauff",
                                  p2 = "Aryna Sabalenka",
-                                 p1_original_prob = 0.2616522,
-                                 p1_original_se = 0.04906665,
-                                 p2_original_prob = 0.3578947,
-                                 p2_original_se = 0.04936017)
+                                 p1_original_prob = 0.2571936,
+                                 p1_original_se = 0.05026303,
+                                 p2_original_prob = 0.3688839,
+                                 p2_original_se = 0.05054256)
 ```
 
 Now we can plot the probability of Coco Guaff winning the match
@@ -84,16 +84,21 @@ Now we can plot the probability of Coco Guaff winning the match
 plot_gauff_sab_large_prior <- get_plot_df(combined_df = combined_prob_gauff_sab_lp_df,
                                         which_player_prob = 1,
                                         best_of_3 = TRUE,
-                                        advantage = FALSE)
+                                        advantage = FALSE,
+                                        type = "distribution") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 4, should be a 3
+  mutate(set_number = ifelse(pt_number == max(pt_number), '3', set_number)) |>
+  mutate(set_number = as.factor(set_number))
 
 set_boundaries_gauff_sab_large_prior <- plot_gauff_sab_large_prior |>
-  group_by(total_sets) |>
+  group_by(set_number) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
 plot_gauff_sab_large_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_rect(data = set_boundaries_gauff_sab_large_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
-                                       ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
        y = "Probability of Winning Match",
@@ -111,7 +116,7 @@ plot_gauff_sab_large_prior |> ggplot(aes(x = pt_number, y = probability)) +
 Get probabilities of Gauff winning a point while serving and while returning
 ```{r}
 aug_mod_gau_small_prior <- create_prior(ext = "wta_matches_2023.csv",
-                         tourn_name = "US Open",
+                         tourn_name = "Us Open",
                          surf = "Hard",
                          start_date = "2023-07-24",
                          end_date = "2023-09-8",
@@ -122,24 +127,15 @@ aug_mod_gau_small_prior <- create_prior(ext = "wta_matches_2023.csv",
 aug_mod_gau_small_prior
 
 # probability Gauff wins a point on serve
-expit(0.3550237) # 0.5878353
+expit(0.3555439) # 0.5879613
 # probability Gauff wins a point on return
-expit(-0.1801184) # 0.4550917
+expit(-0.1906711) # 0.4524761
 
 # Do negation for Sabalenka points
 # probability Sabalenka wins a point on serve
-expit(0.1801184) # 0.5449083
+expit(0.1906711) # 0.5475239
 # probability Sabalenka wins a point on return
-expit(-0.3550237) # 0.4121647
-```
-
-Get the point level data for the 2023 US Open Finals match between Gauff and Sabalenka
-```{r}
-both_serving_df <- wrangle_point_level(ext = "2023-usopen-points.csv",
-                               ID = "2023-usopen-2701")
-
-gauff_serving <- both_serving_df[[1]]
-saba_serving <- both_serving_df[[2]]
+expit(-0.3555439) # 0.4120387
 ```
 
 Get a data frame with the probabilities for each player seving
@@ -148,10 +144,10 @@ combined_prob_gauff_sab_sp_df <- get_probabilities_df(p1_serving_df = gauff_serv
                                  p2_serving_df = saba_serving,
                                  p1 = "Coco Gauff",
                                  p2 = "Aryna Sabalenka",
-                                 p1_original_prob = 0.3550237,
-                                 p1_original_se = 0.09351795,
-                                 p2_original_prob = 0.1801184,
-                                 p2_original_se = 0.09535962)
+                                 p1_original_prob = 0.3555439,
+                                 p1_original_se = 0.1026245,
+                                 p2_original_prob = 0.1906711,
+                                 p2_original_se = 0.1049427)
 ```
 
 Now we can plot the probability of Coco Guaff winning the match
@@ -159,16 +155,21 @@ Now we can plot the probability of Coco Guaff winning the match
 plot_gauff_sab_small_prior <- get_plot_df(combined_df = combined_prob_gauff_sab_sp_df,
                                         which_player_prob = 1,
                                         best_of_3 = TRUE,
-                                        advantage = FALSE)
+                                        advantage = FALSE,
+                                        type = "distribution") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 4, should be a 3
+  mutate(set_number = ifelse(pt_number == max(pt_number), '3', set_number)) |>
+  mutate(set_number = as.factor(set_number))
 
 set_boundaries_gauff_sab_small_prior <- plot_gauff_sab_small_prior |>
-  group_by(total_sets) |>
+  group_by(set_number) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
 plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_rect(data = set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
-                                       ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
        y = "Probability of Winning Match",
@@ -186,16 +187,13 @@ No need to create_prior as we are just fixing probabilities for both players.
 
 Get the point level data
 ```{r}
-both_serving_df <- wrangle_point_level(ext = "2023-usopen-points.csv",
-                               ID = "2023-usopen-2701")
-
-gauff_serving_fp <- both_serving_df[[1]] |> 
+gauff_serving_fp <- gauff_serving |> 
   mutate(player1 = "Coco Gauff",
          player2 = "Aryna Sabalenka") |>
     # also create indicator if serving player won the point
     mutate(server_won = ifelse(PointWinner == 1, 1, 0))
 
-saba_serving_fp <- both_serving_df[[2]] |> 
+saba_serving_fp <- saba_serving |> 
   mutate(player1 = "Coco Gauff",
          player2 = "Aryna Sabalenka") |>
     # also create indicator if serving player won the point
@@ -216,16 +214,21 @@ combined_gauff_sab_fixed_df <- bind_rows(gauff_serving_fp, saba_serving_fp) |>
 plot_gauff_sab_fixed_prior <- get_plot_df(combined_df = combined_gauff_sab_fixed_df, 
                         which_player_prob = 1,
                         best_of_3 = TRUE,
-                        advantage = FALSE)
+                        advantage = FALSE,
+                        type = "mean") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 4, should be a 3
+  mutate(set_number = ifelse(pt_number == max(pt_number), '3', set_number)) |>
+  mutate(set_number = as.factor(set_number))
 
 set_boundaries_gauff_sab_fixed_prior <- plot_gauff_sab_fixed_prior |>
-  group_by(total_sets) |>
+  group_by(set_number) |>
   summarize(xmin = min(pt_number) - 0.5,
             xmax = max(pt_number) + 0.5)
 
 plot_gauff_sab_fixed_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_rect(data = set_boundaries_gauff_sab_fixed_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
-                                       ymin = -Inf, ymax = Inf, fill = total_sets), alpha = 0.2) + 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
   geom_line(aes(y = win_prob_px)) +
   labs(x = "Point Number",
        y = "Probability of Winning Match",

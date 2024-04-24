@@ -13,7 +13,31 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
                          ref_player = "Milos Raonic") {
   
   matches <- purrr::map(ext, read_matches) |>
-    bind_rows()
+    bind_rows() |>
+    mutate(round = case_when(round == "F" ~ 2,
+                             round == "SF" ~ 4,
+                             round == "QF" ~ 8,
+                             round == "R16" ~ 16,
+                             round == "R32" ~ 32,
+                             round == "R64" ~ 64,
+                             round == "R128" ~ 128,
+                             .default = NA)) ## covers RR matches
+  
+  ## figure out match of interest based on players and tourn_name
+  match_of_interest <- matches |> filter(tourney_name == tourn_name) |>
+    filter((winner_name == player1 | winner_name == player2) &
+             (loser_name == player1 | loser_name == player2))
+  
+  ## return an error if a player or tournament is misspelled or
+  ## the match-up did not happen for that particular tournament
+  if (nrow(match_of_interest) < 1) {
+    stop("There is no match for the specified players and tournament.")
+  } else if (nrow(match_of_interest) > 1) {
+    stop("There is more than one match for the specified players and tournament.")
+  }
+  
+  ## grab the round from the match of interest
+  round_of_interest <- match_of_interest |> pull(round)
   
   # filter for relevant matches
   prior <- matches |>
@@ -21,10 +45,13 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
     
     # incorrect filter here, show to higham
     # filter(tourney_name ==  tourn_name |
-             # (surface == surf & tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
+    # (surface == surf & tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
     filter((tourney_name == tourn_name | surface == surf) &
-           (tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
-  
+             (tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date))) |>
+    ## add a filter to remove matches beyond the match of interest
+    filter((tourney_name != tourn_name) |
+             (tourney_name == tourn_name & lubridate::year(tourney_date) != lubridate::year(end_date)) |
+             (tourney_name == tourn_name & round > round_of_interest))
   
   prior_points <- prior |>
     select(1:3,6,7,9,11,17,19,24,30,32,33,39,41,42,46,48) |>
@@ -70,7 +97,7 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
     player2 = (player2),
     p1_server = c(1, 0),
     p2_server = c(0, 1))
-
+  
   aug_mod <- aug_mod(comp_mod, newdata = match_data)
   
   return(aug_mod)

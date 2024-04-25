@@ -3,6 +3,7 @@ title: "Estimating Tennis In-Match-Win Probability with Bayesian Modeling"
 format: revealjs
 author: "Ben Moolman"
 institute: "St. Lawrence University"
+embed-resources: true
 ---
 
 ```{r}
@@ -40,7 +41,7 @@ alc_serving <- sin_alc_paired[[2]]
 
 ## Bayesian Prior, Data, and Posterior
 
-![](bayesian_diagram.jpeg)
+![Johnson, A. A., Ott, M. Q., & Dogucu, M. (2021). Bayes Rules! An Introduction to Applied Bayesian Modeling](bayesian_diagram.jpeg)
 
 ## Prior Distribution
 
@@ -186,7 +187,7 @@ prior_sin_sd_logodds <- 0.1193404
 
 prior_sin_df <- tibble::tibble(logodds = rnorm(200000,
                                                  prior_sin_logodds,
-                                                 prior_sin_logodds),
+                                                 prior_sin_sd_logodds),
                            prob = expit(logodds))
 
 prior_alc_logodds <- 0.5017383
@@ -203,35 +204,16 @@ both_priors_df <- bind_rows(prior_sin_df, prior_alc_df, .id = "type") |>
          type = fct_relevel(type, c("Sinner", "Alcaraz")))
 
 ggplot(data = both_priors_df, aes(x = prob)) +
-  geom_density(adjust = 2,
-               linewidth = 0.9) + ## adjust smooths it out
+  geom_density(aes(colour = type), adjust = 2,
+               linewidth = 1.4) + ## adjust smooths it out
+  scale_colour_viridis_d(end = 0.9) +
   theme_minimal() +
-  facet_wrap(~type) +
   labs(title = "Prior Distributions for Sinner and Alcaraz",
        x = "Probability of Winning a Point (on serve)",
        y = "Density",
        caption = "Prior includes matches from leadup tournaments to 2022 USO and 2022 USO itself") +
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 20)
 ```
-
-```{r}
-#| eval: false
-#| output: false
-ggplot(data = both_priors_df, aes(x = prob)) +
-  geom_density(adjust = 2,
-               linewidth = 0.9) + ## adjust smooths it out
-  theme_minimal() +
-  facet_wrap(~type, scales = "free_y") +
-  labs(title = "Prior Distributions for Sinner and Alcaraz",
-       x = "Probability of Winning a Point (on serve)",
-       y = "Density",
-       caption = "Prior includes matches from leadup tournaments to 2022 USO and USO itself") +
-  theme(axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank()) +
-  theme_bw(base_size = 14)
-```
-
 
 ## Data + Posterior
 
@@ -281,69 +263,45 @@ plot_df <- bind_rows(tibble_mod, prior_sin_df, .id = "type") |>
 
 ```{r}
 ggplot(data = plot_df, aes(x = prob)) +
-  geom_density(aes(linetype = type), adjust = 2,
+  geom_density(aes(linetype = "prior"), adjust = 2,
                linewidth = 0.9) + ## adjust smooths it out
   theme_minimal() +
-  labs(title = "Prior and Posterior Distributions at Specific Match State",
-       subtitle = "Sinner serving at 40-15, 1-1, 3rd set",
-       x = "Probability of Winning a Point (on serve)",
-       y = "Density",
-       caption = "Sinner: 89/150 points won on serve") +
-  theme_bw(base_size = 14)
+  labs(title = "Prior Distribution for Jannik Sinner",
+       x = "Sinner's Probability of Winning a Point (on serve)",
+       y = "Density") +
+  coord_cartesian(ylim = c(0, 17)) +
+  theme_bw(base_size = 22)
 ```
 
+
+## Data + Posterior
+
 ```{r}
-#| eval: false
-#| output: false
 ggplot(data = plot_df, aes(x = prob)) +
   geom_density(aes(linetype = type), adjust = 2,
                linewidth = 0.9) + ## adjust smooths it out
   theme_minimal() +
   labs(title = "Prior and Posterior Distributions at Specific Match State",
        subtitle = "Sinner serving at 40-15, 1-1, 3rd set",
-       x = "Probability of Winning a Point (on serve)",
+       x = "Sinner's Probability of Winning a Point (on serve)",
        y = "Density",
        caption = "Sinner: 89/150 points won on serve") +
-  theme(axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank()) +
-  theme_bw(base_size = 14)
-```
-
-
-## Point Level Data
-
-```{r}
-alc_v_sinner_full <- bind_rows(sin_serving, alc_serving) |>
-  arrange(pt_number) |>
-  select(pt_number, PointServer, everything())
-```
-
-```{r}
-alc_v_sinner_full |> slice(1:10) |>
-  mutate(P2Score = ifelse(P2Score == 4, "AD", P2Score)) |>
-  kable() |>
-  kable_styling(full_width = FALSE,
-                font_size = 17)
-
-alc_v_sinner_full |> slice(63:70) |>
-  kable() |>
-  kable_styling(full_width = FALSE,
-                font_size = 17)
+  coord_cartesian(ylim = c(0, 17)) +
+  theme_bw(base_size = 22)
 ```
 
 ## Calculating In-Match-Win Probability
 
-![https://towardsdatascience.com/building-a-tennis-match-simulator-in-python-3add9af6bebe](tennis_game_flow_chart.png)
+![](tennis_game_flow_chart.png)
 
 ## Case Study 1: Alcaraz vs Sinner
 
   * In the 2022 US Open, Carlos Alcaraz faced Jannik Sinner in the quarterfinals
   * Alcaraz defeated Sinner in 5 sets, 6-3, 6-7(7), 6-7(0), 7-5, 6-3
   * We will look at probability of Alcaraz winning the match
-  * Win probabilities on serve at the start of the match:
-    * $p_{alcaraz} = 0.6229$
-    * $p_{sinner} = 0.5606$
+  * Serve-win probabilities at the start of the match:
+    * $p_{alcaraz}: 0.6229$
+    * $p_{sinner}: 0.5606$
 
 ## Case Study 1: Alcaraz vs Sinner
 
@@ -397,6 +355,8 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1]) +
+  annotate("text", x = 32, y = 0.7, label = "Alcaraz wins") +
+  annotate("text", x = 32, y = 0.65, label = "6-3") +
   theme_bw(base_size = 14)
 ```
 
@@ -417,10 +377,10 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -453,12 +413,14 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:2]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
-           parse = TRUE)
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = "Sinner wins") +
+  annotate("text", x = 110, y = 0.55, label = "7-6(7)")
 ```
 
 ## Case Study 1: Alcaraz vs Sinner
@@ -478,16 +440,16 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:2]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -520,18 +482,20 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:3]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
-           parse = TRUE)
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = "Sinner wins") +
+  annotate("text", x = 200, y = 0.45, label = "7-6(0)")
 ```
 
 ## Case Study 1: Alcaraz vs Sinner
@@ -551,22 +515,22 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:3]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] == 0.620"),
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] == 0.570"),
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -600,24 +564,26 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:4]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] == 0.620"),
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] == 0.570"),
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
            alpha = 0.4,
-           parse = TRUE)
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.9, label = "Alcaraz wins") +
+  annotate("text", x = 285, y = 0.85, label = "7-5")
 ```
 
 ## Case Study 1: Alcaraz vs Sinner
@@ -637,28 +603,28 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:4]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] == 0.620"),
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] == 0.570"),
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] == 0.617"),
+  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] : 0.617"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] : 0.563"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -692,30 +658,32 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:5]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] == 0.620"),
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] == 0.570"),
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] == 0.617"),
+  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] : 0.617"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
-           parse = TRUE)
+           parse = TRUE) +
+  annotate("text", x = 355, y = 0.25, label = "Alcaraz wins") +
+  annotate("text", x = 355, y = 0.2, label = "6-3")
 ```
 
 ## Case Study 1: Alcaraz vs Sinner
@@ -735,34 +703,34 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:5]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] == 0.624"),
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] == 0.549"),
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] == 0.635"),
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] == 0.620"),
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] == 0.570"),
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] == 0.617"),
+  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] : 0.617"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] == 0.563"),
+  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] : 0.563"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 355, y = 0.25, label = paste0("p[alcaraz] == 0.620"),
+  annotate("text", x = 355, y = 0.25, label = paste0("p[alcaraz] : 0.620"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 355, y = 0.2, label = paste0("p[sinner] == 0.557"),
+  annotate("text", x = 355, y = 0.2, label = paste0("p[sinner] : 0.557"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -844,15 +812,15 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                      labels = c("Small Prior", "Large Prior", "Fixed Probability (0.68)")) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
-  scale_colour_viridis_d() +
+  scale_colour_viridis_d(end = 0.9) +
   theme_bw(base_size = 14) +
   annotate("text", x = 110, y = 0.2, label = "Starting Win-Serve Probabilities:", size = 3.5, color = "black") +
   annotate("text", x = 110, y = 0.15, 
-           label = "Small Prior: Alcaraz = 0.5606, Sinner = 0.6229", size = 3.5, color = "black") +
+           label = paste0("Small Prior - p[alcaraz]: 0.6229, p[sinner]: 0.5606"), size = 3.5, color = "black") +
   annotate("text", x = 110, y = 0.1, 
-           label = "Large Prior: Alcaraz = 0.6176 Sinner = 0.6056", size = 3.5, color = "black") +
+           label = paste0("Large Prior - p[alcaraz]: 0.6176, p[sinner]: 0.6056"), size = 3.5, color = "black") +
   annotate("text", x = 110, y = 0.05, 
-           label = "Fixed Probability: Alcaraz = 0.68, Sinner = 0.68", size = 3.5, color = "black")
+           label = "Fixed Probability - p[alcaraz]: 0.68, p[sinner]: 0.68", size = 3.5, color = "black")
 ```
 
 ## Case Study 2: Gauff vs Sabalenka
@@ -860,7 +828,7 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   * In the 2023 US Open, Coco Gauff faced Aryna Sabalenka in the finals
   * Gauff defeated Sabalenka in 3 sets, 2-6, 6-3, 6-2
   * We will look at probability of Gauff winning the match
-  * Win probabilities on serve at the start of the match:
+  * Serve-win probabilities at the start of the match:
     * $p_{gauff} = 0.5880$
     * $p_{sabalenka} = 0.5475$
     
@@ -918,7 +886,9 @@ plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
   scale_fill_manual(values = fills[1]) +
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = "Sabalenka wins") +
+  annotate("text", x = 25, y = 0.2, label = "6-2")
 ```
 
 ## Case Study 2: Gauff vs Sabalenka
@@ -938,10 +908,10 @@ plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
   scale_fill_manual(values = fills[1]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] == 0.578"),
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] == 0.552"),
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -974,12 +944,14 @@ plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
   scale_fill_manual(values = fills[1:2]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] == 0.578"),
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] == 0.552"),
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
            alpha = 0.4,
-           parse = TRUE)
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.25, label = "Gauff wins") +
+  annotate("text", x = 80, y = 0.2, label = "6-3")
 ```
 
 ## Case Study 2: Gauff vs Sabalenka
@@ -999,16 +971,16 @@ plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
   scale_fill_manual(values = fills[1:2]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] == 0.578"),
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] == 0.552"),
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] == 0.585"),
+  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] : 0.585"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] == 0.554"),
+  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] : 0.554"),
            alpha = 0.9,
            parse = TRUE)
 ```
@@ -1041,27 +1013,61 @@ plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
                   xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
   scale_fill_manual(values = fills[1:3]) +
   theme_bw(base_size = 14) +
-  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] == 0.578"),
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] == 0.552"),
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] == 0.585"),
+  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] : 0.585"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] == 0.554"),
+  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] : 0.554"),
            alpha = 0.4,
            parse = TRUE) +
-  annotate("text", x = 133, y = 0.25, label = paste0("p[gauff] == 0.587"),
+  annotate("text", x = 133, y = 0.25, label = "Gauff wins") +
+  annotate("text", x = 133, y = 0.2, label = "6-2")
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = three_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_three_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1:3]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] : 0.585"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] : 0.554"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 133, y = 0.25, label = paste0("p[gauff] : 0.587"),
            alpha = 0.9,
            parse = TRUE) +
-  annotate("text", x = 133, y = 0.2, label = paste0("p[sabalenka] == 0.546"),
+  annotate("text", x = 133, y = 0.2, label = paste0("p[sabalenka] : 0.546"),
            alpha = 0.9,
            parse = TRUE)
 ```
 
 ## Conclusion
+
 
 
 ## Acknowledgements

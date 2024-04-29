@@ -1,8 +1,14 @@
 ---
 title: "Estimating Tennis In-Match-Win Probability with Bayesian Modeling"
-format: revealjs
+format: 
+  revealjs:
+    transition: fade
+    theme: serif
+    slide-number: true
+    footer: "Tennis In-Match Win Prediction"
 author: "Ben Moolman"
 institute: "St. Lawrence University"
+date: April 26, 2024
 embed-resources: true
 ---
 
@@ -107,7 +113,7 @@ ggraph(network_obj_tennis |> mutate(centrality = centrality_authority()),
   geom_edge_link(aes(width = n), alpha = 0.7, show.legend = FALSE) +
   geom_node_point(aes(size = centrality)) +
   scale_edge_width(range = c(0.5, 3)) +
-  geom_node_text(aes(label = label), repel = TRUE)  +
+  geom_node_text(aes(label = label), repel = TRUE, size = 7)  +
   scale_colour_viridis_d() +
   guides(size = "none") +
   labs(title = "Network Diagram")
@@ -294,12 +300,21 @@ ggplot(data = plot_df, aes(x = prob)) +
 
 ![](tennis_game_flow_chart.png)
 
+## Match-Win Probability vs Winning-Point Probability (on Serve)
+ 
+::: {.callout-warning}
+## We are looking at 3 different probabilities
+  - $p_{sinner}$ and $p_{alcaraz}$ are probabilities of winning a point on serve and get updated throughout the match
+  - Overall match-win probability is calculated using these probabilities
+:::
+
+
 ## Case Study 1: Alcaraz vs Sinner
 
   * In the 2022 US Open, Carlos Alcaraz faced Jannik Sinner in the quarterfinals
   * Alcaraz defeated Sinner in 5 sets, 6-3, 6-7(7), 6-7(0), 7-5, 6-3
   * We will look at probability of Alcaraz winning the match
-  * Serve-win probabilities at the start of the match:
+  * Probability of winning a point on serve at the start of the match:
     * $p_{alcaraz}: 0.6229$
     * $p_{sinner}: 0.5606$
 
@@ -816,11 +831,14 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   theme_bw(base_size = 14) +
   annotate("text", x = 110, y = 0.2, label = "Starting Win-Serve Probabilities:", size = 3.5, color = "black") +
   annotate("text", x = 110, y = 0.15, 
-           label = paste0("Small Prior - p[alcaraz]: 0.6229, p[sinner]: 0.5606"), size = 3.5, color = "black") +
+           label = paste0("'Small Prior - '*p[alcaraz]: 0.6229*', '*p[sinner]: 0.5606"), size = 3.5, color = "black",
+           parse = TRUE) +
   annotate("text", x = 110, y = 0.1, 
-           label = paste0("Large Prior - p[alcaraz]: 0.6176, p[sinner]: 0.6056"), size = 3.5, color = "black") +
+           label = paste0("'Large Prior - '*p[alcaraz]: 0.61768*', '*p[sinner]: 0.6056"), size = 3.5, color = "black",
+           parse = TRUE) +
   annotate("text", x = 110, y = 0.05, 
-           label = "Fixed Probability - p[alcaraz]: 0.68, p[sinner]: 0.68", size = 3.5, color = "black")
+           label = "'Fixed Probability - '*p[alcaraz]: 0.68*', '*p[sinner]: 0.68", size = 3.5, color = "black",
+           parse = TRUE)
 ```
 
 ## Case Study 2: Gauff vs Sabalenka
@@ -828,9 +846,9 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   * In the 2023 US Open, Coco Gauff faced Aryna Sabalenka in the finals
   * Gauff defeated Sabalenka in 3 sets, 2-6, 6-3, 6-2
   * We will look at probability of Gauff winning the match
-  * Serve-win probabilities at the start of the match:
-    * $p_{gauff} = 0.5880$
-    * $p_{sabalenka} = 0.5475$
+  * Probability of winning a point on serve at the start of the match:
+    * $p_{gauff} : 0.5880$
+    * $p_{sabalenka} : 0.5475$
     
 ## Case Study 2: Gauff vs Sabalenka
 
@@ -1068,7 +1086,11 @@ plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
 
 ## Conclusion
 
-
+  * Dynamic Nature
+  
+  * Data-driven Insights
+  
+  * Future Directions
 
 ## Acknowledgements
 

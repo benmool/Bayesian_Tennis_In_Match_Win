@@ -17,3 +17,5 @@ knitr
 kableExtra
 Rcpp
 rstanarm
+tidygraph
+ggraph

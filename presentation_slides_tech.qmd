@@ -1,0 +1,1306 @@
+---
+title: "Estimating Tennis In-Match-Win Probability with Bayesian Modeling"
+format: 
+  revealjs:
+    transition: fade
+    theme: serif
+    slide-number: true
+    footer: "Tennis In-Match Win Prediction"
+author: "Ben Moolman"
+institute: "St. Lawrence University"
+date: April 26, 2024
+embed-resources: true
+---
+
+
+```{r}
+#| output: false
+library(tidyverse)
+library(compr)
+library(broom)
+library(dplyr)
+library(readr)
+library(deuce)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+
+# Source the functions
+source("comp_prior_start.R")
+source("bayes_intro.R")
+source("wrangle_point_level_data.R")
+source("Create_Prior.R")
+source("get_probabilities_df.R")
+source("get_plot_df.R")
+```
+
+```{r}
+sin_alc_paired <- wrangle_point_level(ext = "2022-usopen-points.csv",
+                               ID = "2022-usopen-1503")
+
+sin_serving <- sin_alc_paired[[1]]
+alc_serving <- sin_alc_paired[[2]]
+```
+
+## Introduction
+
+![](auso_probabilities.jpg)
+
+## Bayesian Prior, Data, and Posterior
+
+![Johnson, A. A., Ott, M. Q., & Dogucu, M. (2021). Bayes Rules! An Introduction to Applied Bayesian Modeling](bayesian_diagram.jpeg)
+
+
+## Prior Distribution
+
+```{r}
+prior_sin_logodds <- 0.2434863
+prior_sin_sd_logodds <- 0.1193404
+
+prior_sin_df <- tibble::tibble(logodds = rnorm(200000,
+                                                 prior_sin_logodds,
+                                                 prior_sin_sd_logodds),
+                           prob = expit(logodds))
+
+prior_alc_logodds <- 0.5017383
+prior_alc_sd_logodds <- 0.1196950
+
+prior_alc_df <- tibble::tibble(logodds = rnorm(200000,
+                                                 prior_alc_logodds,
+                                                 prior_alc_sd_logodds),
+                           prob = expit(logodds))
+
+both_priors_df <- bind_rows(prior_sin_df, prior_alc_df, .id = "type") |>
+  mutate(type = fct_recode(type, "Sinner" = "1",
+                           "Alcaraz" = "2"),
+         type = fct_relevel(type, c("Sinner", "Alcaraz")))
+
+ggplot(data = both_priors_df, aes(x = prob)) +
+  geom_density(aes(colour = type), adjust = 2,
+               linewidth = 1.4) + ## adjust smooths it out
+  scale_colour_viridis_d(end = 0.9) +
+  theme_minimal() +
+  labs(title = "Prior Distributions for Sinner and Alcaraz",
+       x = "Probability of Winning a Point (on serve)",
+       y = "Density",
+       caption = "Prior includes matches from leadup tournaments to 2022 USO and 2022 USO itself") +
+  theme_bw(base_size = 20)
+```
+
+## Data + Posterior
+
+```{r}
+#| warning: false
+#| output: false
+p1_serving_df <- sin_serving |> slice(1:150)
+
+p1_serving_df |>
+  summarise(points_won = sum(PointWinner == 1),
+            points_played = n(),
+            prop_won = points_won / points_played)
+
+alc_serving |>
+  summarise(points_won = sum(PointWinner == 2),
+            points_played = n(),
+            prop_won = points_won / points_played)
+
+p1_niter <- p1_serving_df |> nrow()
+
+p1_prob_store <- double()
+  
+p1_serving <- p1_serving_df |>
+    # also create indicator if serving player won the point
+    mutate(server_won = ifelse(PointWinner == 1, 1, 0))
+  
+mod <- stan_glm(server_won ~ 1, data = p1_serving |> slice(1:p1_niter),
+                    family = binomial,
+                    prior_intercept = normal(prior_sin_logodds, prior_sin_sd_logodds),
+                    seed = 123)
+coef(mod) |> expit()
+
+# use above to pull specific probabilities at a state of the match
+
+tibble_mod <- as_tibble(mod) |>
+  mutate(prob = expit(`(Intercept)`)) |>
+  rename(logodds = `(Intercept)`)
+
+ggplot(data = tibble_mod, aes(x = prob)) +
+  geom_density(adjust = 5, linewidth = 0.9)
+
+plot_df <- bind_rows(tibble_mod, prior_sin_df, .id = "type") |>
+  mutate(type = fct_recode(type, "posterior" = "1",
+                           "prior" = "2"),
+         type = fct_relevel(type, c("prior", "posterior")))
+```
+
+```{r}
+ggplot(data = plot_df, aes(x = prob)) +
+  geom_density(aes(linetype = "prior"), adjust = 2,
+               linewidth = 0.9) + ## adjust smooths it out
+  theme_minimal() +
+  labs(title = "Prior Distribution for Jannik Sinner",
+       x = "Sinner's Probability of Winning a Point (on serve)",
+       y = "Density") +
+  coord_cartesian(ylim = c(0, 17)) +
+  theme_bw(base_size = 22)
+```
+
+
+## Data + Posterior
+
+```{r}
+ggplot(data = plot_df, aes(x = prob)) +
+  geom_density(aes(linetype = type), adjust = 2,
+               linewidth = 0.9) + ## adjust smooths it out
+  theme_minimal() +
+  labs(title = "Prior and Posterior Distributions at Specific Match State",
+       subtitle = "Sinner serving at 40-15, 1-1, 3rd set",
+       x = "Sinner's Probability of Winning a Point (on serve)",
+       y = "Density",
+       caption = "Sinner: 89/150 points won on serve") +
+  coord_cartesian(ylim = c(0, 17)) +
+  theme_bw(base_size = 22)
+```
+
+## Prior Distribution: Paired Competition Model
+
+* define $Y_{ijk}$ be a Bernoulli random variable equal to 
+    * $1$ if player $i$ wins the $k^{th}$ point against player $j$.
+    * $0$ if player $i$ loses the $k^{th}$ point against player $j$.
+* $\text{E}(Y_{ijk}) \equiv \pi_{ijk}$, the probability that Player $i$ wins the $k^{th}$ point against Player $j$.
+
+## Prior Distribution: Paired Competition Model
+
+$$
+\text{logit}(\pi_{ijk}) = \beta_{alcaraz}X_{alcaraz} + \beta_{sinner}X_{sinner} + \ldots + \beta_{ruud}X_{ruud},
+$$
+
+* $X_{alcaraz}$ is equal to 
+    * $1$ if Alcaraz is player $i$ on the $k^{th}$ point.
+    * $0$ if Alcaraz is neither player $i$ nor player $j$ on the $k^{th}$ point.
+    * $-1$ if Alcaraz is player $j$ on the $k^{th}$ point.
+* $\beta_{alcaraz}$ represents a unitless "ability" of Alcaraz.
+
+<!-- mention reference player for identifiability purposes -->
+
+## Paired Competition Model: Example
+
+* log-odds of Carlos Alcaraz (player $i$) winning a point against Jannik Sinner (player $j$):
+
+\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ij}) & = \beta_{alcaraz}(1) + \beta_{sinner}(-1) + \ldots + \beta_{ruud}(0) \\
+                                 & = \beta_{alcaraz} - \beta_{sinner}
+  \end{aligned}
+\end{equation}
+
+## Prior Distribution
+
+```{r}
+#| warning: false
+library(tidygraph)
+matches2022 <- purrr::map("atp_matches_2022.csv", read_matches) |>
+  bind_rows() |>
+  select(winner_name, loser_name)
+
+matches2022 <- purrr::map("atp_matches_2022.csv", read_matches) |>
+  bind_rows() |>
+  filter(winner_seed <= 2 & best_of == 5) |>
+  select(winner_name, loser_name)
+
+set.seed(12)
+random_sample <- matches2022 |> sample_n(20)
+
+player_names <- tibble(player1 = random_sample$winner_name,
+                       player2 = random_sample$loser_name)
+
+player_names <- tibble(
+  player1 = c("Felix Auger Aliassime", "Novak Djokovic", "Daniil Medvedev", "Carlos Alcaraz", "Jannik Sinner", 
+              "Rafael Nadal", "Casper Ruud", "Holger Rune", "Andrey Rublev", "Tommy Paul", "Sebastian Korda", 
+              "Taylor Fritz", "Felix Auger Aliassime", "Felix Auger Aliassime", "Daniil Medvedev", "Taylor Fritz"),
+  player2 = c("Novak Djokovic", "Daniil Medvedev", "Carlos Alcaraz", "Novak Djokovic", "Rafael Nadal", "Casper Ruud", 
+              "Holger Rune", "Andrey Rublev", "Tommy Paul", "Sebastian Korda", "Taylor Fritz", 
+              "Felix Auger Aliassime", "Felix Auger Aliassime", "Rafael Nadal", "Jannik Sinner", "Casper Ruud")
+)
+
+nodes_tennis <- player_names |> pivot_longer(c(player1, player2),
+                             names_to = "player_num",
+                             values_to = "player") |>
+  distinct(player) |>
+  rowid_to_column("id") |>
+  rename(label = player)
+
+player_sum <- player_names |> 
+  mutate(p1 = if_else(player1 > player2,
+                      true = player2,
+                      false = player1),
+         p2 = if_else(player1 > player2,
+                      true = player1,
+                      false = player2)) |>
+  select(-player1, -player2) |>
+  group_by(p1, p2) |>
+  summarise(n = n())
+
+# create edges to match with ids
+edges_tennis <- left_join(player_sum, nodes_tennis, 
+                   by = join_by(p1 == label)) |>
+  rename(from = "id") |>
+  left_join(nodes_tennis, by = join_by(p2 == label)) |>
+  rename(to = "id") |>
+  ungroup() |>
+  dplyr::select(to, from, n)
+# create network obj
+network_obj_tennis <- tbl_graph(nodes = nodes_tennis, edges = edges_tennis, directed = FALSE)
+
+library(ggraph)
+ggraph(network_obj_tennis |> mutate(centrality = centrality_authority()),
+                            layout = "stress") +
+  geom_edge_link(aes(width = n), alpha = 0.7, show.legend = FALSE) +
+  geom_node_point(aes(size = centrality)) +
+  scale_edge_width(range = c(0.5, 3)) +
+  geom_node_text(aes(label = label), repel = TRUE, size = 7)  +
+  scale_colour_viridis_d() +
+  guides(size = "none") +
+  labs(title = "Network Diagram")
+```
+
+```{r}
+#| eval: false
+#| warning: false
+# make network for our actual prior
+
+tourn_name = "US Open"
+surf = "Hard"
+start_date = "2022-07-25"
+end_date = "2022-09-06"
+sin_alc_network_sp <- purrr::map("atp_matches_2022.csv", read_matches) |>
+  bind_rows() |>
+    mutate(tourney_date = lubridate::ymd(tourney_date)) |>
+    filter((tourney_name == tourn_name | surface == surf) &
+           (tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date))) |>
+  select(winner_name, loser_name)
+
+player_names_sp <- tibble(
+  player1 = sin_alc_network_sp$winner_name,
+  player2 = sin_alc_network_sp$loser_name
+)
+
+nodes_tennis_sp <- player_names_sp |> pivot_longer(c(player1, player2),
+                             names_to = "player_num",
+                             values_to = "player") |>
+  distinct(player) |>
+  rowid_to_column("id") |>
+  rename(label = player)
+
+player_sum_sp <- player_names_sp |> 
+  mutate(p1 = if_else(player1 > player2,
+                      true = player2,
+                      false = player1),
+         p2 = if_else(player1 > player2,
+                      true = player1,
+                      false = player2)) |>
+  select(-player1, -player2) |>
+  group_by(p1, p2) |>
+  summarise(n = n())
+
+# create edges to match with ids
+edges_tennis_sp <- left_join(player_sum_sp, nodes_tennis_sp, 
+                   by = join_by(p1 == label)) |>
+  rename(from = "id") |>
+  left_join(nodes_tennis_sp, by = join_by(p2 == label)) |>
+  rename(to = "id") |>
+  ungroup() |>
+  dplyr::select(to, from, n)
+# create network obj
+network_obj_tennis_sp <- tbl_graph(nodes = nodes_tennis_sp, edges = edges_tennis_sp, directed = FALSE)
+
+library(ggraph)
+ggraph(network_obj_tennis_sp |> mutate(centrality = centrality_authority()),
+                            layout = "stress") +
+  geom_edge_link(aes(width = n), alpha = 0.7, show.legend = FALSE) +
+  geom_node_point(aes(size = centrality)) +
+  scale_edge_width(range = c(0.5, 3)) +
+  geom_node_text(aes(label = label), repel = TRUE)  +
+  scale_colour_viridis_d() +
+  guides(size = "none") +
+  labs(title = "Network Diagram")
+
+sin_alc_network_sp |> filter(winner_name == "Carlos Alcaraz" | loser_name == "Carlos Alcaraz")
+sin_alc_network_sp |> filter(winner_name == "Jannik Sinner" | loser_name == "Jannik Sinner")
+```
+
+## Adding a Server Effect
+
+\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ijk}) = & \beta_{alcaraz}X_{alcaraz} + \beta_{sinner}X_{sinner} + \ldots + \beta_{ruud}X_{ruud} + \\
+    & \alpha_{alcaraz}X_{alcaraz,s} + \alpha_{sinner}X_{sinner,s} + \ldots + \alpha_{ruud}X_{ruud,s}
+  \end{aligned}
+\end{equation}
+
+* $X_{alcaraz,s}$ is equal to
+    * $1$ if Alcaraz is the serving player $i$ on point $k$.
+    * $0$ if Alcaraz is the returning player on point $k$ or if Alcaraz is neither player $i$ nor player $j$.
+    * $-1$ if Alcaraz is the serving player $j$ on point $k$
+* $\alpha_{alcaraz}$ represents a bump in point win probability for when Alcaraz serves compared to when he receives.
+
+
+
+## Server Effect: Example
+
+* log-odds of Carlos Alcaraz (player $i$) winning a point against Jannik Sinner (player $j$) with Alcaraz serving on point $k$:
+
+\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ijk}) & = \beta_{alcaraz}(1) +       \beta_{sinner}(-1) + \ldots + \beta_{ruud}(0) + \\
+    & \;\;\;\; \alpha_{alcaraz}(1) + \alpha_{sinner}(0) + \ldots + \alpha_{ruud}(0) \\
+    & = \beta_{alcaraz} + \alpha_{alcaraz} - \beta_{sinner}
+  \end{aligned}
+\end{equation}
+
+## Server Effect: Example
+
+* log-odds of Carlos Alcaraz (player $i$) winning a point against Jannik Sinner (player $j$) with Sinner serving on point $k$:
+
+\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ijk}) & = \beta_{alcaraz}(1) +       \beta_{sinner}(-1) + \ldots + \beta_{ruud}(0) + \\
+    & \;\;\;\; \alpha_{alcaraz}(0) + \alpha_{sinner}(-1) + \ldots + \alpha_{ruud}(0) \\
+    & = \beta_{alcaraz} - \beta_{sinner} - \alpha_{sinner}
+  \end{aligned}
+\end{equation}
+
+## Prior Distribution
+
+```{r}
+prior_sin_logodds <- 0.2434863
+prior_sin_sd_logodds <- 0.1193404
+
+prior_sin_df <- tibble::tibble(logodds = rnorm(200000,
+                                                 prior_sin_logodds,
+                                                 prior_sin_sd_logodds),
+                           prob = expit(logodds))
+
+prior_alc_logodds <- 0.5017383
+prior_alc_sd_logodds <- 0.1196950
+
+prior_alc_df <- tibble::tibble(logodds = rnorm(200000,
+                                                 prior_alc_logodds,
+                                                 prior_alc_sd_logodds),
+                           prob = expit(logodds))
+
+both_priors_df <- bind_rows(prior_sin_df, prior_alc_df, .id = "type") |>
+  mutate(type = fct_recode(type, "Sinner" = "1",
+                           "Alcaraz" = "2"),
+         type = fct_relevel(type, c("Sinner", "Alcaraz")))
+
+ggplot(data = both_priors_df, aes(x = prob)) +
+  geom_density(aes(colour = type), adjust = 2,
+               linewidth = 1.4) + ## adjust smooths it out
+  scale_colour_viridis_d(end = 0.9) +
+  theme_minimal() +
+  labs(title = "Prior Distributions for Sinner and Alcaraz",
+       x = "Probability of Winning a Point (on serve)",
+       y = "Density",
+       caption = "Prior includes matches from leadup tournaments to 2022 USO and 2022 USO itself") +
+  theme_bw(base_size = 20)
+```
+
+## Calculating In-Match-Win Probability
+
+![](tennis_game_flow_chart.png)
+
+## Match-Win Probability vs Winning-Point Probability (on Serve)
+ 
+::: {.callout-warning}
+## We are looking at 3 different probabilities
+  - $p_{sinner}$ and $p_{alcaraz}$ are probabilities of winning a point on serve and get updated throughout the match
+  - Overall match-win probability is calculated using these probabilities
+:::
+
+## Case Study 1: Alcaraz vs Sinner
+
+  * In the 2022 US Open, Carlos Alcaraz faced Jannik Sinner in the quarterfinals
+  * Alcaraz defeated Sinner in 5 sets, 6-3, 6-7(7), 6-7(0), 7-5, 6-3
+  * We will look at probability of Alcaraz winning the match
+  * Let $\tilde{p}$ be the posterior median probability of winning a point on serve:
+    * $\tilde{p}_{alcaraz} = 0.6229$
+    * $\tilde{p}_{sinner} = 0.5606$
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+#| output: false
+#| cache: true
+combined_prob_sin_alc_sp_df <- get_probabilities_df(p1_serving_df = sin_serving,
+                                 p2_serving_df = alc_serving,
+                                 p1 = "Jannik Sinner",
+                                 p2 = "Carlos Alcaraz",
+                                 p1_original_prob = 0.2434863,
+                                 p1_original_se = 0.1193404,
+                                 p2_original_prob = 0.5017383,
+                                 p2_original_se = 0.1196950)
+
+plot_sin_alc_small_prior <- get_plot_df(combined_df = combined_prob_sin_alc_sp_df, 
+                        which_player_prob = 2,
+                        best_of_3 = FALSE,
+                        advantage = FALSE,
+                        type = "distribution") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 6, should be a 5
+  mutate(set_number = ifelse(pt_number == max(pt_number), '5', set_number)) |>
+  mutate(set_number = as.factor(set_number))
+
+fills <- c("#F57A5C", "#F5C25C", "#94E25B", "#69CEE0", "#A875CE")
+```
+
+```{r}
+plot_first_set_sin_alc <- plot_sin_alc_small_prior |>
+  filter(set_number == 1)
+
+first_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1)
+```
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = first_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_first_set_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1]) +
+  annotate("text", x = 32, y = 0.7, label = "Alcaraz wins") +
+  annotate("text", x = 32, y = 0.65, label = "6-3") +
+  theme_bw(base_size = 14)
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = first_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_first_set_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_two_sets_sin_alc <- plot_sin_alc_small_prior |>
+  filter(set_number == 1 | set_number == 2)
+
+two_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1 | set_number == 2)
+```
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = two_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_two_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:2]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = "Sinner wins") +
+  annotate("text", x = 110, y = 0.55, label = "7-6(7)")
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = two_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_two_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:2]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_three_sets_sin_alc <- plot_sin_alc_small_prior |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3)
+
+three_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3)
+```
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = three_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_three_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:3]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = "Sinner wins") +
+  annotate("text", x = 200, y = 0.45, label = "7-6(0)")
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = three_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_three_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:3]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_four_sets_sin_alc <- plot_sin_alc_small_prior |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3 | set_number == 4)
+
+four_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3 | set_number == 4)
+```
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = four_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_four_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:4]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.9, label = "Alcaraz wins") +
+  annotate("text", x = 285, y = 0.85, label = "7-5")
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = four_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_four_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:4]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] : 0.617"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_five_sets_sin_alc <- plot_sin_alc_small_prior |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3 | set_number == 4 | set_number == 5)
+
+five_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3 | set_number == 4 | set_number == 5)
+```
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = five_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_five_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:5]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] : 0.617"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 355, y = 0.25, label = "Alcaraz wins") +
+  annotate("text", x = 355, y = 0.2, label = "6-3")
+```
+
+## Case Study 1: Alcaraz vs Sinner
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = five_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_five_sets_sin_alc, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_fill_manual(values = fills[1:5]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 32, y = 0.7, label = paste0("p[alcaraz] : 0.624"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 32, y = 0.65, label = paste0("p[sinner] : 0.549"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.6, label = paste0("p[alcaraz] : 0.635"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.55, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.5, label = paste0("p[alcaraz] : 0.620"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 200, y = 0.45, label = paste0("p[sinner] : 0.570"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.9, label = paste0("p[alcaraz] : 0.617"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 285, y = 0.85, label = paste0("p[sinner] : 0.563"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 355, y = 0.25, label = paste0("p[alcaraz] : 0.620"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 355, y = 0.2, label = paste0("p[sinner] : 0.557"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Posterior Distribution
+
+```{r}
+#| warning: false
+#| output: false
+p1_serving_df <- sin_serving |> slice(1:150)
+
+p1_serving_df |>
+  summarise(points_won = sum(PointWinner == 1),
+            points_played = n(),
+            prop_won = points_won / points_played)
+
+alc_serving |>
+  summarise(points_won = sum(PointWinner == 2),
+            points_played = n(),
+            prop_won = points_won / points_played)
+
+p1_niter <- p1_serving_df |> nrow()
+
+p1_prob_store <- double()
+  
+p1_serving <- p1_serving_df |>
+    # also create indicator if serving player won the point
+    mutate(server_won = ifelse(PointWinner == 1, 1, 0))
+sin_serving <- sin_serving |>
+    # also create indicator if serving player won the point
+    mutate(server_won = ifelse(PointWinner == 1, 1, 0))
+
+mod <- stan_glm(server_won ~ 1, data = p1_serving |> slice(1:p1_niter),
+                    family = binomial,
+                    prior_intercept = normal(prior_sin_logodds, prior_sin_sd_logodds),
+                    seed = 123)
+coef(mod) |> expit()
+
+mod_full <-  stan_glm(server_won ~ 1, data = sin_serving,
+                    family = binomial,
+                    prior_intercept = normal(prior_sin_logodds, prior_sin_sd_logodds),
+                    seed = 123)
+coef(mod_full) |> expit()
+# use above to pull specific probabilities at a state of the match
+
+tibble_mod <- as_tibble(mod) |>
+  mutate(prob = expit(`(Intercept)`)) |>
+  rename(logodds = `(Intercept)`)
+
+tibble_mod_full <- as_tibble(mod_full) |>
+  mutate(prob = expit(`(Intercept)`)) |>
+  rename(logodds = `(Intercept)`)
+
+
+ggplot(data = tibble_mod, aes(x = prob)) +
+  geom_density(adjust = 5, linewidth = 0.9)
+ggplot(data = tibble_mod_full, aes(x = prob)) +
+  geom_density(adjust = 5, linewidth = 0.9)
+
+plot_df <- bind_rows(tibble_mod, tibble_mod_full,
+                     prior_sin_df, .id = "type") |>
+  mutate(type = fct_recode(type, "posterior1" = "1",
+                           "posterior2" = "2",
+                           "prior" = "3"),
+         type = fct_relevel(type, c("prior", "posterior1", "posterior2")))
+```
+
+```{r}
+#| output: false
+ggplot(data = plot_df, aes(x = prob)) +
+  geom_density(aes(linetype = "prior"), adjust = 2,
+               linewidth = 0.9) + ## adjust smooths it out
+  theme_minimal() +
+  labs(title = "Prior Distribution for Jannik Sinner",
+       x = "Sinner's Probability of Winning a Point (on serve)",
+       y = "Density") +
+  coord_cartesian(ylim = c(0, 17)) +
+  theme_bw(base_size = 22)
+```
+
+```{r}
+ggplot(data = plot_df, aes(x = prob)) +
+  geom_density(aes(colour = type), adjust = 2,
+               linewidth = 0.9) + ## adjust smooths it out
+  theme_minimal() +
+  labs(title = "Prior and Posterior Distributions at Specific Match State",
+       x = "Sinner's Probability of Winning a Point (on serve)",
+       y = "Density",
+       caption = "Posterior1: Midway through Match \n Posterior2: End of Match") +
+  coord_cartesian(ylim = c(0, 17)) +
+  scale_colour_viridis_d(end = 0.9) +
+  theme_bw(base_size = 22)
+```
+
+## Posterior Sampling
+
+* posterior distribution sampled 4000 times 
+    * each of the 4000 draws is plugged in to the match-win probability chain.
+* even if center of posterior distribution does not change, match-win probability will still be affected by the posterior distribution variability.
+    
+## Case Study 1: Changing Prior
+
+```{r}
+#| output: false
+#| cache: true
+combined_prob_alc_sin_lp_df <- get_probabilities_df(p1_serving_df = sin_serving,
+                                 p2_serving_df = alc_serving,
+                                 p1 = "Jannik Sinner",
+                                 p2 = "Carlos Alcaraz",
+                                 p1_original_prob = 0.4288085,
+                                 p1_original_se = 0.04919170,
+                                 p2_original_prob = 0.4795682,
+                                 p2_original_se = 0.04971023)
+
+plot_sin_alc_large_prior <- get_plot_df(combined_df = combined_prob_alc_sin_lp_df,
+                                        which_player_prob = 2,
+                                        best_of_3 = FALSE,
+                                        advantage = FALSE,
+                                        type = "distribution") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 6, should be a 5
+  mutate(set_number = ifelse(pt_number == max(pt_number), '5', set_number)) |>
+  mutate(set_number = as.factor(set_number))
+
+sin_serving_fp <- sin_serving |> 
+  mutate(player1 = "Jannik Sinner",
+         player2 = "Carlos Alcaraz") |>
+    # also create indicator if serving player won the point
+    mutate(server_won = ifelse(PointWinner == 1, 1, 0))
+
+alc_serving_fp <- alc_serving |> 
+  mutate(player1 = "Jannik Sinner",
+         player2 = "Carlos Alcaraz") |>
+    # also create indicator if serving player won the point
+    mutate(server_won = ifelse(PointWinner == 2, 1, 0))
+
+combined_sin_alc_fixed_df <- bind_rows(sin_serving_fp, alc_serving_fp) |>
+    arrange(pt_number) |>
+  mutate(p1_wserv_prob = 0.68,
+         p2_wserv_prob = 0.68) |>
+  mutate(P1SetsWon = cumsum(SetWinner == 1),
+           P2SetsWon = cumsum(SetWinner == 2)) |>
+  select(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,
+         P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon) |>
+  mutate(PointServer = case_when(P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 1 ~ 2,
+                                 P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 2 ~ 1,
+                                 TRUE ~ PointServer))
+
+plot_sin_alc_fixed_prior <- get_plot_df(combined_df = combined_sin_alc_fixed_df, 
+                        which_player_prob = 2,
+                        best_of_3 = FALSE,
+                        advantage = FALSE,
+                        type = "mean") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 6, should be a 5
+  mutate(set_number = ifelse(pt_number == max(pt_number), '5', set_number)) |>
+  mutate(set_number = as.factor(set_number))
+```
+
+```{r}
+plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_line(aes(y = win_prob_px, 
+                color = factor("Small Prior", levels = c("Small Prior", "Large Prior", "Fixed Probability"))), 
+                alpha = 0.9) +
+  geom_line(data = plot_sin_alc_large_prior, aes(y = win_prob_px, color = "Large Prior"), alpha = 0.5) +
+  geom_line(data = plot_sin_alc_fixed_prior, aes(y = win_prob_px, color = "Fixed Probability (0.68)"), alpha = 0.5) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
+       subtitle = "Probability of Alcaraz Winning Match with Different Priors",
+       caption = "Comparing Different Prior Distributions",
+       color = "Server") +
+  scale_color_manual(values = c("Small Prior" = "red", "Large Prior" = "blue", "Fixed Probability" = "green"),
+                     labels = c("Small Prior", "Large Prior", "Fixed Probability (0.68)")) +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_sin_alc_small_prior))) +
+  scale_colour_viridis_d(end = 0.9) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 110, y = 0.2, label = "Starting Win-Serve Probabilities:", size = 3.5, color = "black") +
+  annotate("text", x = 110, y = 0.15, 
+           label = paste0("'Small Prior - '*p[alcaraz]: 0.6229*', '*p[sinner]: 0.5606"), size = 3.5, color = "black",
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.1, 
+           label = paste0("'Large Prior - '*p[alcaraz]: 0.61768*', '*p[sinner]: 0.6056"), size = 3.5, color = "black",
+           parse = TRUE) +
+  annotate("text", x = 110, y = 0.05, 
+           label = "'Fixed Probability - '*p[alcaraz]: 0.68*', '*p[sinner]: 0.68", size = 3.5, color = "black",
+           parse = TRUE)
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+-   In the 2023 US Open, Coco Gauff faced Aryna Sabalenka in the finals
+-   Gauff defeated Sabalenka in 3 sets, 2-6, 6-3, 6-2
+-   We will look at probability of Gauff winning the match
+-   Probability of winning a point on serve at the start of the match:
+    -   $\tilde{p}_{gauff} : 0.5880$
+    -   $\tilde{p}_{sabalenka} : 0.5475$
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+#| output: false
+#| cache: true
+gauff_sab_paired <- wrangle_point_level(ext = "2023-usopen-points.csv",
+                               ID = "2023-usopen-2701")
+
+gauff_serving <- gauff_sab_paired[[1]]
+saba_serving <- gauff_sab_paired[[2]]
+
+combined_prob_gauff_sab_sp_df <- get_probabilities_df(p1_serving_df = gauff_serving,
+                                 p2_serving_df = saba_serving,
+                                 p1 = "Coco Gauff",
+                                 p2 = "Aryna Sabalenka",
+                                 p1_original_prob = 0.3555439,
+                                 p1_original_se = 0.1026245,
+                                 p2_original_prob = 0.1906711,
+                                 p2_original_se = 0.1049427)
+
+plot_gauff_sab_small_prior <- get_plot_df(combined_df = combined_prob_gauff_sab_sp_df,
+                                        which_player_prob = 1,
+                                        best_of_3 = TRUE,
+                                        advantage = FALSE,
+                                        type = "distribution") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 6, should be a 5
+  mutate(set_number = ifelse(pt_number == max(pt_number), '3', set_number)) |>
+  mutate(set_number = as.factor(set_number))
+
+plot_first_set_gauff_sab <- plot_gauff_sab_small_prior |>
+  filter(set_number == 1)
+
+first_set_boundaries_gauff_sab_small_prior <- plot_gauff_sab_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1)
+```
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = first_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_first_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = "Sabalenka wins") +
+  annotate("text", x = 25, y = 0.2, label = "6-2")
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = first_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_first_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+plot_two_set_gauff_sab <- plot_gauff_sab_small_prior |>
+  filter(set_number == 1 | set_number == 2)
+
+two_set_boundaries_gauff_sab_small_prior <- plot_gauff_sab_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1 | set_number == 2)
+```
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = two_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_two_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1:2]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.25, label = "Gauff wins") +
+  annotate("text", x = 80, y = 0.2, label = "6-3")
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = two_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_two_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1:2]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] : 0.585"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] : 0.554"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+plot_three_set_gauff_sab <- plot_gauff_sab_small_prior |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3)
+
+three_set_boundaries_gauff_sab_small_prior <- plot_gauff_sab_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5) |>
+  filter(set_number == 1 | set_number == 2 | set_number == 3)
+```
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = three_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_three_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1:3]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] : 0.585"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] : 0.554"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 133, y = 0.25, label = "Gauff wins") +
+  annotate("text", x = 133, y = 0.2, label = "6-2")
+```
+
+## Case Study 2: Gauff vs Sabalenka
+
+```{r}
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = three_set_boundaries_gauff_sab_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                                       ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(data = plot_three_set_gauff_sab, aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, 1),
+                  xlim = c(0, nrow(plot_gauff_sab_small_prior))) +
+  scale_fill_manual(values = fills[1:3]) +
+  theme_bw(base_size = 14) +
+  annotate("text", x = 25, y = 0.25, label = paste0("p[gauff] : 0.578"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 25, y = 0.2, label = paste0("p[sabalenka] : 0.552"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.25, label = paste0("p[gauff] : 0.585"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 80, y = 0.2, label = paste0("p[sabalenka] : 0.554"),
+           alpha = 0.4,
+           parse = TRUE) +
+  annotate("text", x = 133, y = 0.25, label = paste0("p[gauff] : 0.587"),
+           alpha = 0.9,
+           parse = TRUE) +
+  annotate("text", x = 133, y = 0.2, label = paste0("p[sabalenka] : 0.546"),
+           alpha = 0.9,
+           parse = TRUE)
+```
+
+## Conclusion
+
+-   Dynamic Nature
+
+-   Data-driven Insights
+
+-   Future Directions
+
+## Acknowledgements
+
+-   Jeff Sackman Github
+-   Skoval `deuce` package
+-   James Wolpe SLU '23 prior distribution
+-   Dr. Matt Higham
+
+
+
+

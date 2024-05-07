@@ -3,8 +3,11 @@ title: "README.qmd"
 format: gfm
 ---
 
-```{r}
+```{r, show_col_types = FALSE}
 #| output: false
+#| echo: false
+#| warning: false
+#| message: false
 library(tidyverse)
 library(compr)
 library(broom)
@@ -25,6 +28,7 @@ source("get_plot_df.R")
 ```
 
 ```{r}
+#| echo: false
 sin_alc_paired <- wrangle_point_level(ext = "2022-usopen-points.csv",
                                ID = "2022-usopen-1503")
 
@@ -53,6 +57,7 @@ We start with some prior beliefs about the probabilities that player1 and player
 For our example of Alcaraz vs Sinner, we will use data from the leadup tournaments to the 2022 US Open (hard court tournaments) and the rounds of the 2022 US Open before the quarterfinals to calculate the probability that Alcaraz wins a point while serving against Sinner, and the probability that Sinner wins a point while serving against Alcaraz. With these estimated probabilities and standard deviations, we then create distributions for the prior probabilities of winning a point on serve for Alcaraz and Sinner.
 
 ```{r}
+#| echo: false
 prior_sin_logodds <- 0.2434863
 prior_sin_sd_logodds <- 0.1193404
 
@@ -97,6 +102,7 @@ For our Alcaraz and Sinner example, now that we have their probabilities of winn
 ```{r}
 #| warning: false
 #| output: false
+#| echo: false
 p1_serving_df <- sin_serving |> slice(1:150)
 
 p1_serving_df |>
@@ -139,6 +145,7 @@ plot_df <- bind_rows(tibble_mod, prior_sin_df, .id = "type") |>
 ```
 
 ```{r}
+#| echo: false
 ggplot(data = plot_df, aes(x = prob)) +
   geom_density(aes(linetype = type), adjust = 2,
                linewidth = 0.9) + ## adjust smooths it out
@@ -163,6 +170,7 @@ For our example, we will explore the probability that Alcaraz wins the match.
 ```{r}
 #| output: false
 #| cache: true
+#| echo: false
 combined_prob_sin_alc_sp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
@@ -186,6 +194,7 @@ fills <- c("#F57A5C", "#F5C25C", "#94E25B", "#69CEE0", "#A875CE")
 ```
 
 ```{r}
+#| echo: false
 plot_five_sets_sin_alc <- plot_sin_alc_small_prior |>
   filter(set_number == 1 | set_number == 2 | set_number == 3 | set_number == 4 | set_number == 5)
 
@@ -197,6 +206,7 @@ five_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
 ```
 
 ```{r}
+#| echo: false
 plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_rect(data = five_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
                                        ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
@@ -222,6 +232,7 @@ For our example, we will explore the effect of changing the prior distributions 
 ```{r}
 #| output: false
 #| cache: true
+#| echo: false
 combined_prob_alc_sin_lp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
@@ -277,6 +288,7 @@ plot_sin_alc_fixed_prior <- get_plot_df(combined_df = combined_sin_alc_fixed_df,
 ```
 
 ```{r}
+#| echo: false
 plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_line(aes(y = win_prob_px, 
                 color = factor("Small Prior", levels = c("Small Prior", "Large Prior", "Fixed Probability"))), 

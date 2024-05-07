@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.553">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Project_Write_Up</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Project_Write_Up_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Project_Write_Up_files/libs/quarto-html/quarto.js"></script>
+<script src="Project_Write_Up_files/libs/quarto-html/popper.min.js"></script>
+<script src="Project_Write_Up_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Project_Write_Up_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Project_Write_Up_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Project_Write_Up_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Project_Write_Up_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Project_Write_Up_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Project_Write_Up_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Project_Write_Up</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Load in libraries</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(compr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(deuce)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pander)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Source our functions</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"comp_prior_start.R"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"bayes_intro.R"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"wrangle_point_level_data.R"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"create_prior.R"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"get_probabilities_df.R"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"get_plot_df.R"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Want to work on suppressing these messages</strong></p>
+<section id="atp-and-wta-professional-tennis-calculating-in-match-win-probability-with-bayesian-modeling" class="level2">
+<h2 class="anchored" data-anchor-id="atp-and-wta-professional-tennis-calculating-in-match-win-probability-with-bayesian-modeling">ATP and WTA Professional Tennis: Calculating In-Match-Win Probability with Bayesian Modeling</h2>
+<p>This project explores the probabilities of professional tennis players winning matches. Tennis’ scoring format allows for huge momentum swings in a short amount of time, and we are going to explore how the probabilities that tennis players win a match are calculated and update throughout the match using Bayesian modeling. We will be using the probability that player1 wins a point on serve against player2, the probability that player2 wins a point on serve against player1, and the current score of the match of interest. We will explore the 2022 Men’s US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner as an example. Alcaraz defeated Sinner in 5 sets, 6-3, 6-7(7), 6-7(0), 7-5, 6-3. We will also explore the 2023 Women’s US Open Final between Coco Gauff and Arnya Sabalenka. Gauff defeated Sabalenka in 3 sets, 2-6, 6-3, 6-2.</p>
+<section id="tennis-scoring" class="level3">
+<h3 class="anchored" data-anchor-id="tennis-scoring">Tennis Scoring</h3>
+<p>The scoring format in tennis can be confusing to those that are not familiar with the sport. * The match starts with one player serving at 0-0 * The server is the player that hits the ball first in a point * The server alternates what side they serve from after every point * A game is played with the server serving for the entire game * A game is won by the first player to win 4 points, wining by a margin of 2 or more points * Sets are played first to 6 games, wining by a margin of 2 or more games * If the score reaches 6-6 in a set, a tiebreak is played * A tiebreak is won by the first player to win 7 points, wining by a margin of 2 or more points * A match is played to the best of 3 or 5 sets based on the tournament format</p>
+<p>A graphic is attached below to help, and a more detailed write-up can be found on the <em>doubletake</em> website <a href="https://www.shopdoubletake.com/blogs/well-played/tennis-scoring-101">here</a>.</p>
+<p><img src="tennis_scoring.jpeg" class="img-fluid"></p>
+</section>
+<section id="bayesian-modeling" class="level3">
+<h3 class="anchored" data-anchor-id="bayesian-modeling">Bayesian Modeling</h3>
+<p>In Bayesian modeling, we start with some existing beliefs about a parameter, which we call our prior distribution. We then observe new data come in and update our beliefs about the parameter based on the new data, which we call our posterior distribution.</p>
+<p>In this project, our parameters of interest are the probabilities that player1 and player2 win a point on their serve. We calculate these probabilities using previous matches that have been played. As the match progresses, we update our beliefs about these probabilities of winning a point on serve, and at a specific state of the match, we can calculate the probability that either of the players wins the match. Choosing what matches we include in our prior distributions is important, as we want to include matches that are relevant to the match of interest.</p>
+</section>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>The data used in this project is from the ATP and WTA professional tennis tours, and is from Jeff Sackman’s tennis data on Github. There is <a href="https://github.com/JeffSackmann/tennis_slam_pointbypoint">point-level data</a> on the ATP and WTA main-draw singles grand slam tournaments from 2011-present. There is also <a href="https://github.com/JeffSackmann/tennis_atp">match-level data</a> for ATP matches and <a href="https://github.com/JeffSackmann/tennis_wta">match-level data</a> for WTA matches. We will be using functions that handle reading in the data and wrangling it. Access to the data is needed to ensure correct spelling of player names and tournament names, the formatting of date ranges, the correct file paths, and match IDs for specific matches of interest.</p>
+</section>
+<section id="prior-distributions" class="level3">
+<h3 class="anchored" data-anchor-id="prior-distributions">Prior Distributions</h3>
+<p>We start with some prior beliefs about the probabilities that player1 and player2 win a point on serve. We use the data from previous matches to calculate these prior distributions. We will update these prior distributions as the match progresses.</p>
+<p>When forming our prior beliefs, we are using a paired competition model. This means that we are using the data from the matches that player1 and player2 have played in, as well as other players that they have played against. For this to work, we need there to be some connection between player1 and player2 using matches they and other opponents have played (ie player1 has played against playera, who played against playerb, who played against player2).</p>
+<p>We define <span class="math inline">\(Y_{ijk}\)</span> to be a Bernoulli random variable equal to either: * <span class="math inline">\(1\)</span> if player <span class="math inline">\(i\)</span> wins the <span class="math inline">\(k^{th}\)</span> point against player <span class="math inline">\(j\)</span> * <span class="math inline">\(0\)</span> if player <span class="math inline">\(i\)</span> loses the <span class="math inline">\(k^{th}\)</span> point against player <span class="math inline">\(j\)</span></p>
+<p>Then <span class="math inline">\(\text{E}(Y_{ijk}) \equiv \pi_{ijk}\)</span>, the probability that Player <span class="math inline">\(i\)</span> wins the <span class="math inline">\(k^{th}\)</span> point against Player <span class="math inline">\(j\)</span>.</p>
+<p>So we have: <span class="math display">\[\text{logit}(\pi_{ijk}) = \beta_{alcaraz}X_{alcaraz} + \beta_{sinner}X_{sinner} + \ldots + \beta_{ruud}X_{ruud}\]</span> Where <span class="math inline">\(X_{alcaraz}\)</span> is equal to: * <span class="math inline">\(1\)</span> if Alcaraz is player <span class="math inline">\(i\)</span> on the <span class="math inline">\(k^{th}\)</span> point * <span class="math inline">\(0\)</span> if Alcaraz is neither player <span class="math inline">\(i\)</span> nor player <span class="math inline">\(j\)</span> on the <span class="math inline">\(k^{th}\)</span> point * <span class="math inline">\(-1\)</span> if Alcaraz is player <span class="math inline">\(j\)</span> on the <span class="math inline">\(k^{th}\)</span> point</p>
+<p>and <span class="math inline">\(\beta_{alcaraz}\)</span> represents a unitless “ability” of Alcaraz.</p>
+<p>For an example, the log-odds of Carlos Alcaraz (player <span class="math inline">\(i\)</span>) winning a point against Jannik Sinner (player <span class="math inline">\(j\)</span>):</p>
+<p><span class="math display">\[\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ij}) &amp; = \beta_{alcaraz}(1) + \beta_{sinner}(-1) + \ldots + \beta_{ruud}(0) \\
+                                 &amp; = \beta_{alcaraz} - \beta_{sinner}
+  \end{aligned}
+\end{equation}\]</span></p>
+<p>We can then work on adding a serving effect:</p>
+<p><span class="math display">\[\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ijk}) = &amp; \beta_{alcaraz}X_{alcaraz} + \beta_{sinner}X_{sinner} + \ldots + \beta_{ruud}X_{ruud} + \\
+    &amp; \alpha_{alcaraz}X_{alcaraz,s} + \alpha_{sinner}X_{sinner,s} + \ldots + \alpha_{ruud}X_{ruud,s}
+  \end{aligned}
+\end{equation}\]</span></p>
+<p>Where <span class="math inline">\(X_{alcaraz,s}\)</span> is equal to: * <span class="math inline">\(1\)</span> if Alcaraz is the serving player <span class="math inline">\(i\)</span> on point <span class="math inline">\(k\)</span>. * <span class="math inline">\(0\)</span> if Alcaraz is the returning player on point <span class="math inline">\(k\)</span> or if Alcaraz is neither player <span class="math inline">\(i\)</span> nor player <span class="math inline">\(j\)</span>. * <span class="math inline">\(-1\)</span> if Alcaraz is the serving player <span class="math inline">\(j\)</span> on point <span class="math inline">\(k\)</span></p>
+<p>And so we have <span class="math inline">\(\alpha_{alcaraz}\)</span> representing a bump in point win probability for when Alcaraz serves compared to when he receives.</p>
+<p>So as an example, the log-odds of Carlos Alcaraz (player <span class="math inline">\(i\)</span>) winning a point against Jannik Sinner (player <span class="math inline">\(j\)</span>) with Alcaraz serving on point <span class="math inline">\(k\)</span> would be:</p>
+<p><span class="math display">\[\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ijk}) &amp; = \beta_{alcaraz}(1) +       \beta_{sinner}(-1) + \ldots + \beta_{ruud}(0) + \\
+    &amp; \;\;\;\; \alpha_{alcaraz}(1) + \alpha_{sinner}(0) + \ldots + \alpha_{ruud}(0) \\
+    &amp; = \beta_{alcaraz} + \alpha_{alcaraz} - \beta_{sinner}
+  \end{aligned}
+\end{equation}\]</span></p>
+<p>And as another example, the log-odds of Carlos Alcaraz (player <span class="math inline">\(i\)</span>) winning a point against Jannik Sinner (player <span class="math inline">\(j\)</span>) with Sinner serving on point <span class="math inline">\(k\)</span> would be:</p>
+<p><span class="math display">\[\begin{equation}
+  \begin{aligned}
+    \text{logit}(\pi_{ijk}) &amp; = \beta_{alcaraz}(1) +       \beta_{sinner}(-1) + \ldots + \beta_{ruud}(0) + \\
+    &amp; \;\;\;\; \alpha_{alcaraz}(0) + \alpha_{sinner}(-1) + \ldots + \alpha_{ruud}(0) \\
+    &amp; = \beta_{alcaraz} - \beta_{sinner} - \alpha_{sinner}
+  \end{aligned}
+\end{equation}\]</span></p>
+<p>We will use the data from the leadup tournaments to the 2022 US Open (hard court tournaments) and the rounds of the 2022 US Open before the quarterfinals to calculate these coefficients in the paired competition model. We can then calculate the probability that Alcaraz wins a point while serving against Sinner, and the probability that Sinner wins a point while serving against Alcaraz. With these estimated probabilities and standard deviations, we then create distributions for the prior probabilities of winning a point on serve for Alcaraz and Sinner.</p>
+<p><strong>NOTE</strong> Is it good idea to put in network diagram? The one I have that is clean is not applicable to this specific data, but could be nice to visualize? Can have diagram and some text explaining it…</p>
+<p>So, to calculate the prior distributions of the probabilities that Alcaraz and Sinner win a point on serve, we will use our <code>create_prior</code> function. Note that this function’s outputs are on the log-odds scale, and contains the mean log-odds values for player1 and the standard deviations.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>aug_mod_sin_small_prior <span class="ot">&lt;-</span> <span class="fu">create_prior</span>(<span class="at">ext =</span> <span class="fu">c</span>(<span class="st">"atp_matches_2022.csv"</span>),</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">tourn_name =</span> <span class="st">"Us Open"</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">surf =</span> <span class="st">"Hard"</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">start_date =</span> <span class="st">"2022-07-25"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">end_date =</span> <span class="st">"2022-09-06"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">player1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                         <span class="at">player2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ref_player =</span> <span class="st">"Daniil Medvedev"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>aug_mod_sin_small_prior <span class="sc">|&gt;</span> <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 21%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 15%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">player1</th>
+<th style="text-align: left;">player2</th>
+<th style="text-align: right;">p1_server</th>
+<th style="text-align: right;">p2_server</th>
+<th style="text-align: right;">.fitted</th>
+<th style="text-align: right;">.se.fit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Jannik Sinner</td>
+<td style="text-align: left;">Carlos Alcaraz</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.2434863</td>
+<td style="text-align: right;">0.1193404</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Jannik Sinner</td>
+<td style="text-align: left;">Carlos Alcaraz</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.5017383</td>
+<td style="text-align: right;">0.1196950</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>So from the output, we see that Sinner has a mean value of winning a point while serving against Alcaraz of 0.2434863 with a standard error of 0.1193404, and both of these are on the log odds scale. This is indicated by p1_server being equal to 1 for this row. We can also see that Sinner has a mean value of winning a point while returning against Alcaraz of -0.5017383 with a standard error of 0.1196950, and again both on the log odds scale. To get the log odds of Alcaraz winning a point while serving against Sinner, we can negate the value of Sinner winning a point while returning against Alcaraz. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function expit(). The logistic function transforms the log-odds to probabilities, ensuring that the probabilities fall within the range [0, 1].</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Sinner wins a point on serve</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="fl">0.2434863</span>) <span class="co"># 0.5605726</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5605726</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Sinner wins a point on return</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="sc">-</span><span class="fl">0.5017383</span>) <span class="co">#  0.3771322</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3771322</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Alcaraz wins a point on serve</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="fl">0.5017383</span>) <span class="co"># 0.6228678</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6228678</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Alcaraz wins a point on return</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="sc">-</span><span class="fl">0.2434863</span>) <span class="co"># 0.4394274</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.4394274</code></pre>
+</div>
+</div>
+<p>From this prior we have created, we are estimating Sinner to win around 56.06% of points played on his serve against Alcaraz, and for Alcaraz to win around 62.29% of points played on his serve against Sinner.</p>
+<p>We can then create distributions to visualize what these probabilities look like. We’ll start with our log odds and randomly generate 200,000 random samples from a normal distribution with mean log-odds from our prior and standard deviations from our prior.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save sinner log-odds and sd from prior as variables</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>prior_sin_logodds <span class="ot">&lt;-</span> <span class="fl">0.2434863</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>prior_sin_sd_logodds <span class="ot">&lt;-</span> <span class="fl">0.1193404</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># generate random samples from normal distribution</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>prior_sin_df <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(<span class="at">logodds =</span> <span class="fu">rnorm</span>(<span class="dv">200000</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                                                 prior_sin_logodds,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>                                                 prior_sin_sd_logodds),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>                           <span class="at">prob =</span> <span class="fu">expit</span>(logodds))</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Save alcaraz log-odds and sd from prior as variables</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>prior_alc_logodds <span class="ot">&lt;-</span> <span class="fl">0.5017383</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>prior_alc_sd_logodds <span class="ot">&lt;-</span> <span class="fl">0.1196950</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># generate random samples from normal distribution</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>prior_alc_df <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(<span class="at">logodds =</span> <span class="fu">rnorm</span>(<span class="dv">200000</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>                                                 prior_alc_logodds,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>                                                 prior_alc_sd_logodds),</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>                           <span class="at">prob =</span> <span class="fu">expit</span>(logodds))</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="co"># combine the two dfs and distinguish them by type</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>both_priors_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(prior_sin_df, prior_alc_df, <span class="at">.id =</span> <span class="st">"type"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">type =</span> <span class="fu">fct_recode</span>(type, <span class="st">"Sinner"</span> <span class="ot">=</span> <span class="st">"1"</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>                           <span class="st">"Alcaraz"</span> <span class="ot">=</span> <span class="st">"2"</span>),</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">type =</span> <span class="fu">fct_relevel</span>(type, <span class="fu">c</span>(<span class="st">"Sinner"</span>, <span class="st">"Alcaraz"</span>)))</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the two prior distributions</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> both_priors_df, <span class="fu">aes</span>(<span class="at">x =</span> prob)) <span class="sc">+</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="fu">aes</span>(<span class="at">colour =</span> type), <span class="at">adjust =</span> <span class="dv">2</span>, </span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>               <span class="at">linewidth =</span> <span class="fl">1.4</span>) <span class="sc">+</span> <span class="do">## adjust smooths it out</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_viridis_d</span>(<span class="at">end =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Prior Distributions for Sinner and Alcaraz"</span>,</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Probability of Winning a Point (on serve)"</span>,</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>,</span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Prior includes matches from leadup tournaments to 2022 USO and 2022 USO itself"</span>) <span class="sc">+</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project_Write_Up_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>From our prior distributions, we can see that Sinner’s probability of winning a point on serve against Alcaraz is around 0.57, and Alcaraz’s probability of winning a point on serve against Sinner is around 0.62. These are our starting probability distributions for the match. Based on their prior matches we have included, we think that Alcaraz has a higher probability of winning a point on his serve than Sinner does, but, there is some overlap in their prior distributions. As each point is played, we will update these probability distributions.</p>
+</section>
+<section id="prior-data-and-posterior" class="level3">
+<h3 class="anchored" data-anchor-id="prior-data-and-posterior">Prior, Data and Posterior</h3>
+<p>Now with our prior distributions for the probabilities that the players win a point while serving, we can observe how these probabilities update throughout the match by looking at a specific state of the match.</p>
+<p>But first, we need to load in our data for the match between Alcaraz and Sinner. To do this, we will use our function <code>wrangle_point_level()</code>. This function returns a list of two data frames, and the order is determined by which player is listed as Player1 and Player2 for the match, and this can be found on <a href="https://github.com/JeffSackmann">Jeff Sackman’s Github</a>. Look at either <code>tennis_atp</code> repo or <code>tennis_wta</code> repo, find the csv with the correct match year, and from this find the correct match-ID to use in the function, as well as determine which player is Player1 and Player2.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># returns list of two data frames</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>sin_alc_paired <span class="ot">&lt;-</span> <span class="fu">wrangle_point_level</span>(<span class="at">ext =</span> <span class="st">"2022-usopen-points.csv"</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">ID =</span> <span class="st">"2022-usopen-1503"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 47243 Columns: 65
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (10): match_id, ElapsedTime, PointNumber, P1Score, P2Score, WinnerType, ...
+dbl (38): SetNo, P1GamesWon, P2GamesWon, SetWinner, GameNo, GameWinner, Poin...
+lgl (17): Rally, P1FirstSrvIn, P2FirstSrvIn, P1FirstSrvWon, P2FirstSrvWon, P...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># first data frame corresponds to player1 (Sinner)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>sin_serving <span class="ot">&lt;-</span> sin_alc_paired[[<span class="dv">1</span>]]</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># sescond data frame corresponds to player2 (Alcaraz)</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>alc_serving <span class="ot">&lt;-</span> sin_alc_paired[[<span class="dv">2</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can look at a specific state of the match now that we have our data. For our Alcaraz and Sinner example, we also have their probabilities of winning a point on serve at the very start of the match. We can look at Sinner when he is serving at 40-15, 1-1 in the 3rd set (a little less than halfway through the match) and see how his probability of winning a point on serve has changed.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>p1_serving_df <span class="ot">&lt;-</span> sin_serving <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">150</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>p1_serving_df <span class="sc">|&gt;</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">points_won =</span> <span class="fu">sum</span>(PointWinner <span class="sc">==</span> <span class="dv">1</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">points_played =</span> <span class="fu">n</span>(),</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">prop_won =</span> points_won <span class="sc">/</span> points_played) <span class="sc">|&gt;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">points_won</th>
+<th style="text-align: right;">points_played</th>
+<th style="text-align: right;">prop_won</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">150</td>
+<td style="text-align: right;">0.5933333</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>At this state of the match, Sinner has played 150 points on his serve and won 89 of them, which is right around 0.6. We’d expect his updated distribution to shift towards 0.6, as his original probability was around 0.5606.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get the number of rows in the data frame</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>p1_niter <span class="ot">&lt;-</span> p1_serving_df <span class="sc">|&gt;</span> <span class="fu">nrow</span>()</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># create a storage vector for the probabilities</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>p1_prob_store <span class="ot">&lt;-</span> <span class="fu">double</span>()</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># create indicator if serving player won the point</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>p1_serving <span class="ot">&lt;-</span> p1_serving_df <span class="sc">|&gt;</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">server_won =</span> <span class="fu">ifelse</span>(PointWinner <span class="sc">==</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Use a bayesian generalized linear model to update our prior distribution</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(server_won <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> p1_serving <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span>p1_niter),</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>                    <span class="at">family =</span> binomial,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>                    <span class="at">prior_intercept =</span> <span class="fu">normal</span>(prior_sin_logodds, prior_sin_sd_logodds),</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>                    <span class="at">seed =</span> <span class="dv">123</span>)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="co"># get the posterior distribution</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>tibble_mod <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mod) <span class="sc">|&gt;</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prob =</span> <span class="fu">expit</span>(<span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">logodds =</span> <span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span>)</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="co"># bind tibble_mod and our prior for sinner, which was created in the chunk plotting</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="co"># both prior distributions for sinner and alcaraz</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(tibble_mod, prior_sin_df, <span class="at">.id =</span> <span class="st">"type"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">type =</span> <span class="fu">fct_recode</span>(type, <span class="st">"posterior"</span> <span class="ot">=</span> <span class="st">"1"</span>,</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>                           <span class="st">"prior"</span> <span class="ot">=</span> <span class="st">"2"</span>),</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">type =</span> <span class="fu">fct_relevel</span>(type, <span class="fu">c</span>(<span class="st">"prior"</span>, <span class="st">"posterior"</span>)))</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="co"># plot both the prior and the updated prior</span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> plot_df, <span class="fu">aes</span>(<span class="at">x =</span> prob)) <span class="sc">+</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="fu">aes</span>(<span class="at">linetype =</span> type), <span class="at">adjust =</span> <span class="dv">2</span>,</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>               <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span> <span class="do">## adjust smooths it out</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Prior and Posterior Distributions at Specific Match State"</span>,</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Sinner serving at 40-15, 1-1, 3rd set"</span>,</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Sinner's Probability of Winning a Point (on serve)"</span>,</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>,</span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Sinner: 89/150 points won on serve"</span>) <span class="sc">+</span></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">17</span>)) <span class="sc">+</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">22</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can see that Sinner’s probability distribution of winning a point on serve when he is serving at 40-15, 1-1 in the 3rd set has shifted from the prior distribution, closer to 0.6.</p>
+</section>
+<section id="caclulating-in-match-win-probability" class="level3">
+<h3 class="anchored" data-anchor-id="caclulating-in-match-win-probability">Caclulating In-Match-Win Probability</h3>
+<p>With the probabilities of both players winning a point on their serve, we can calculate the probability of either player winning the entire match. We can do this by simulating the match point by point, and updating the probabilities of the players winning a point on serve as each successive point is played. For a current state of the match, we have the updated probabilities of each player winning a point on serve, and the score at that state of the match, and using these we can calculate the overall probability of winning the match.</p>
+<p>For our example, we will explore the probability that Alcaraz wins the match.</p>
+<p>First, we need to calculate the probabilities of Alcaraz and Sinner winning a point on serve after each successive point is played. To do this, we will use our <code>get_probabilities_df()</code> function. This function takes in the data frames of the players’ serving points, the players’ names, the players’ original probabilities of winning a point on serve, and the players’ original standard errors. Before, we looked at Sinner’s updated probability distribution of winning a point on serve at a specific state of the match. Now, we will loop through every single point of the match and obtain updated probabilities of the two players winning a point on serve after each successive point. It is worth noting that as Alcaraz serves multiple points in a row, Sinner’s probability of winning a point on serve does not change as there is no new data we are observing that would update his probability. Our output is a dataframe that contains the probabilities of the two players winning a point on serve which is updated after each successive point.</p>
+<p><strong>Make note here of how we have both the mean probabilities and also have the distribution centers from sampling saved in this df, can then later choose which to use</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>combined_prob_sin_alc_sp_df <span class="ot">&lt;-</span> <span class="fu">get_probabilities_df</span>(<span class="at">p1_serving_df =</span> sin_serving,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_serving_df =</span> alc_serving,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_prob =</span> <span class="fl">0.2434863</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_se =</span> <span class="fl">0.1193404</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_prob =</span> <span class="fl">0.5017383</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_se =</span> <span class="fl">0.1196950</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can now use the probabilities of the two players winning a point on serve to calculate the overall probability of the players winning the match. We will simulate the match point by point, updating the probabilities of the players winning a point on serve as each point is played, and for each specific state of the match and probabilities of the players winning a point on serve, we can calculate the overall probability of a player to win the overall match. We will use the <code>get_plot_df()</code> function to do this.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_small_prior <span class="ot">&lt;-</span> <span class="fu">get_plot_df</span>(<span class="at">combined_df =</span> combined_prob_sin_alc_sp_df, </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">which_player_prob =</span> <span class="dv">2</span>,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">best_of_3 =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">advantage =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">type =</span> <span class="st">"distribution"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(<span class="fu">as.numeric</span>(total_sets))) <span class="sc">|&gt;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fix last row in data set where set_number is 6, should be a 5</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">ifelse</span>(pt_number <span class="sc">==</span> <span class="fu">max</span>(pt_number), <span class="st">'5'</span>, set_number)) <span class="sc">|&gt;</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(set_number))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can choose how many sets we want to display on our graph.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create fills to color sets by</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>fills <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"#F57A5C"</span>, <span class="st">"#F5C25C"</span>, <span class="st">"#94E25B"</span>, <span class="st">"#69CEE0"</span>, <span class="st">"#A875CE"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here, we can look at just the first set of the match:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># filter for just the first set</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>plot_first_set_sin_alc <span class="ot">&lt;-</span> plot_sin_alc_small_prior <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(set_number <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create the boundaries for the sets</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>first_set_boundaries_alc_sin_small_prior <span class="ot">&lt;-</span> plot_sin_alc_small_prior <span class="sc">|&gt;</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(set_number) <span class="sc">|&gt;</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">xmin =</span> <span class="fu">min</span>(pt_number) <span class="sc">-</span> <span class="fl">0.5</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">xmax =</span> <span class="fu">max</span>(pt_number) <span class="sc">+</span> <span class="fl">0.5</span>) <span class="sc">|&gt;</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(set_number <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co"># plot</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_small_prior <span class="sc">|&gt;</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pt_number, <span class="at">y =</span> probability)) <span class="sc">+</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_rect</span>(<span class="at">data =</span> first_set_boundaries_alc_sin_small_prior, <span class="fu">aes</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">xmin =</span> xmin, <span class="at">xmax =</span> xmax, </span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">ymin =</span> <span class="sc">-</span><span class="cn">Inf</span>, <span class="at">ymax =</span> <span class="cn">Inf</span>, <span class="at">fill =</span> set_number), <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span> </span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> plot_first_set_sin_alc, <span class="fu">aes</span>(<span class="at">y =</span> win_prob_px)) <span class="sc">+</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Point Number"</span>,</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Probability of Winning Match"</span>,</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Alcaraz vs Sinner US Open Quarterfinal 2022"</span>,</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Probability of Alcaraz Winning Match"</span>,</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself"</span>,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Server"</span>) <span class="sc">+</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>                  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">nrow</span>(plot_sin_alc_small_prior))) <span class="sc">+</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> fills[<span class="dv">1</span>]) <span class="sc">+</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project_Write_Up_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Add comments on the graph here, dips and peaks, etc… maybe talk about updated probabilities of winning a point on serve now too after the first set?</p>
+<p>We can choose to include all of the sets to plot the entire match:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># not necessary here since we are plotting all sets, but included anyway</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>plot_five_sets_sin_alc <span class="ot">&lt;-</span> plot_sin_alc_small_prior <span class="sc">|&gt;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(set_number <span class="sc">==</span> <span class="dv">1</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">2</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">3</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">4</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">5</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create the boundaries for the sets</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>five_set_boundaries_alc_sin_small_prior <span class="ot">&lt;-</span> plot_sin_alc_small_prior <span class="sc">|&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(set_number) <span class="sc">|&gt;</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">xmin =</span> <span class="fu">min</span>(pt_number) <span class="sc">-</span> <span class="fl">0.5</span>,</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">xmax =</span> <span class="fu">max</span>(pt_number) <span class="sc">+</span> <span class="fl">0.5</span>) <span class="sc">|&gt;</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(set_number <span class="sc">==</span> <span class="dv">1</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">2</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">3</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">4</span> <span class="sc">|</span> set_number <span class="sc">==</span> <span class="dv">5</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co"># plot</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_small_prior <span class="sc">|&gt;</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pt_number, <span class="at">y =</span> probability)) <span class="sc">+</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_rect</span>(<span class="at">data =</span> five_set_boundaries_alc_sin_small_prior, <span class="fu">aes</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">xmin =</span> xmin, <span class="at">xmax =</span> xmax, </span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">ymin =</span> <span class="sc">-</span><span class="cn">Inf</span>, <span class="at">ymax =</span> <span class="cn">Inf</span>, <span class="at">fill =</span> set_number), <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span> </span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> plot_five_sets_sin_alc, <span class="fu">aes</span>(<span class="at">y =</span> win_prob_px)) <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Point Number"</span>,</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Probability of Winning Match"</span>,</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Alcaraz vs Sinner US Open Quarterfinal 2022"</span>,</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Probability of Alcaraz Winning Match"</span>,</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Prior contains 'lead-up' tournaments to the 2022 USO and 2022 USO itself"</span>,</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Server"</span>) <span class="sc">+</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>                  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">nrow</span>(plot_sin_alc_small_prior))) <span class="sc">+</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> fills[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]) <span class="sc">+</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project_Write_Up_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Add comments on the graph here, dips and peaks, etc….</p>
+</section>
+<section id="changing-prior-distributions" class="level3">
+<h3 class="anchored" data-anchor-id="changing-prior-distributions">Changing Prior Distributions</h3>
+<p>We can change what matches we include in our prior distributions and see how this affects our probabilities of each player winning a point on serve at the start of the match. With these different probabilities of winning a point on serve, we can see how the overall probability of winning the match changes.</p>
+<p>Let’s explore what happens if we change the prior distribution to a larger prior. Let’s include all hard court matches over the entire last year before the 2022 US Open. So, now all our matches include the 2021 US Open and all hard court matches played between then and the quarterfinal round of the 2022 US Open. We will see how this changes the probabilities of Alcaraz and Sinner winning points on serve, and see how this changes the overall probability of Alcaraz winning the match.</p>
+<p>We will again use our <code>create_prior</code> function to calculate these values on the log-odds scale.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>aug_mod_sin_large_prior <span class="ot">&lt;-</span> <span class="fu">create_prior</span>(<span class="at">ext =</span> <span class="fu">c</span>(<span class="st">"atp_matches_2021.csv"</span>,</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"atp_matches_2022.csv"</span>),</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">tourn_name =</span> <span class="st">"Us Open"</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">surf =</span> <span class="st">"Hard"</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">start_date =</span> <span class="st">"2021-08-30"</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">end_date =</span> <span class="st">"2022-09-06"</span>,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>                         <span class="at">player1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>                         <span class="at">player2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ref_player =</span> <span class="st">"Novak Djokovic"</span>)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>aug_mod_sin_large_prior <span class="sc">|&gt;</span> <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>So from the output, we see that Sinner has a mean value of winning a point while serving against Alcaraz of 0.4288085 with a standard error of _______, and both of these are on the log odds scale. We can also see that Sinner has a mean value of winning a point while returning against Alcaraz of -0.4795682 with a standard error of ______, and again both on the log odds scale. To get the log odds of Alcaraz winning a point while serving against Sinner, we can negate the value of Sinner winning a point while returning against Alcaraz. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function expit(). The logistic function transforms the log-odds to probabilities, ensuring that the probabilities fall within the range [0, 1].</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Sinner wins a point on serve</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="fl">0.4288085</span>) <span class="co"># 0.6055891</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6055891</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Sinner wins a point on return</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="sc">-</span><span class="fl">0.4795682</span>) <span class="co">#  0.3823541</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3823541</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Alcaraz wins a point on serve</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="fl">0.4795682</span>) <span class="co"># 0.6176459</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6176459</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># probability Alcaraz wins a point on return</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">expit</span>(<span class="sc">-</span><span class="fl">0.4288085</span>) <span class="co"># 0.3944109</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3944109</code></pre>
+</div>
+</div>
+<p>We can then calculate the probabilities of them winning a point on their serve throughout the entire match, updating after each point. We will use our <code>get_probabilities_df()</code> function.</p>
+<p><strong>NOTE</strong> still running code through and want to double check numbers input into this function below</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>combined_prob_alc_sin_lp_df <span class="ot">&lt;-</span> <span class="fu">get_probabilities_df</span>(<span class="at">p1_serving_df =</span> sin_serving,</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_serving_df =</span> alc_serving,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_prob =</span> <span class="fl">0.4288085</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_se =</span> <span class="fl">0.04919170</span>,</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_prob =</span> <span class="fl">0.4795682</span>,</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_se =</span> <span class="fl">0.04971023</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Using the probabilities of the two players winning a point on serve and the current score of the match as we feed it in, we can calculate the overall probability of winning the match.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_large_prior <span class="ot">&lt;-</span> <span class="fu">get_plot_df</span>(<span class="at">combined_df =</span> combined_prob_alc_sin_lp_df,</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">which_player_prob =</span> <span class="dv">2</span>,</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">best_of_3 =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">advantage =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">type =</span> <span class="st">"distribution"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(<span class="fu">as.numeric</span>(total_sets))) <span class="sc">|&gt;</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fix last row in data set where set_number is 6, should be a 5</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">ifelse</span>(pt_number <span class="sc">==</span> <span class="fu">max</span>(pt_number), <span class="st">'5'</span>, set_number)) <span class="sc">|&gt;</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(set_number))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `unnest()` has a new interface. See `?unnest` for details.
+ℹ Try `df %&gt;% unnest(c(server.prob, returner.prob))`, with `mutate()` if
+  needed.
+`unnest()` has a new interface. See `?unnest` for details.
+ℹ Try `df %&gt;% unnest(c(server.prob, returner.prob))`, with `mutate()` if
+  needed.</code></pre>
+</div>
+</div>
+<p><strong>NOTE</strong> Still making more revisions here and tidying up.</p>
+<p>For our example, we will explore the effect of changing the prior distributions on the probability of Alcaraz winning the match. We have our original prior distribution we used, labeled “Small Prior”, and it included the lead-up tournaments to the 2022 US Open and the 2022 US Open itself. We will compare this to a “Large Prior” distribution that includes all hard court matches from the 2021 US Open to the 2022 US Open itself. We can also fix the probabilities of Sinner and Alcaraz winning a point on serve at a specific value, such as 0.68 (around tour average).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>combined_prob_alc_sin_lp_df <span class="ot">&lt;-</span> <span class="fu">get_probabilities_df</span>(<span class="at">p1_serving_df =</span> sin_serving,</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_serving_df =</span> alc_serving,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_prob =</span> <span class="fl">0.4288085</span>,</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_se =</span> <span class="fl">0.04919170</span>,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_prob =</span> <span class="fl">0.4795682</span>,</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_se =</span> <span class="fl">0.04971023</span>)</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_large_prior <span class="ot">&lt;-</span> <span class="fu">get_plot_df</span>(<span class="at">combined_df =</span> combined_prob_alc_sin_lp_df,</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">which_player_prob =</span> <span class="dv">2</span>,</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">best_of_3 =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">advantage =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">type =</span> <span class="st">"distribution"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(<span class="fu">as.numeric</span>(total_sets))) <span class="sc">|&gt;</span></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fix last row in data set where set_number is 6, should be a 5</span></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">ifelse</span>(pt_number <span class="sc">==</span> <span class="fu">max</span>(pt_number), <span class="st">'5'</span>, set_number)) <span class="sc">|&gt;</span></span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(set_number))</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>sin_serving_fp <span class="ot">&lt;-</span> sin_serving <span class="sc">|&gt;</span> </span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">player1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">player2 =</span> <span class="st">"Carlos Alcaraz"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># also create indicator if serving player won the point</span></span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">server_won =</span> <span class="fu">ifelse</span>(PointWinner <span class="sc">==</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>alc_serving_fp <span class="ot">&lt;-</span> alc_serving <span class="sc">|&gt;</span> </span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">player1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>         <span class="at">player2 =</span> <span class="st">"Carlos Alcaraz"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># also create indicator if serving player won the point</span></span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">server_won =</span> <span class="fu">ifelse</span>(PointWinner <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>combined_sin_alc_fixed_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(sin_serving_fp, alc_serving_fp) <span class="sc">|&gt;</span></span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(pt_number) <span class="sc">|&gt;</span></span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">p1_wserv_prob =</span> <span class="fl">0.68</span>,</span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a>         <span class="at">p2_wserv_prob =</span> <span class="fl">0.68</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">P1SetsWon =</span> <span class="fu">cumsum</span>(SetWinner <span class="sc">==</span> <span class="dv">1</span>),</span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a>           <span class="at">P2SetsWon =</span> <span class="fu">cumsum</span>(SetWinner <span class="sc">==</span> <span class="dv">2</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,</span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a>         P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon) <span class="sc">|&gt;</span></span>
+<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PointServer =</span> <span class="fu">case_when</span>(P1PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> P2PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> PointServer <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a>                                 P1PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> P2PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> PointServer <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a>                                 <span class="cn">TRUE</span> <span class="sc">~</span> PointServer))</span>
+<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_fixed_prior <span class="ot">&lt;-</span> <span class="fu">get_plot_df</span>(<span class="at">combined_df =</span> combined_sin_alc_fixed_df, </span>
+<span id="cb35-45"><a href="#cb35-45" aria-hidden="true" tabindex="-1"></a>                        <span class="at">which_player_prob =</span> <span class="dv">2</span>,</span>
+<span id="cb35-46"><a href="#cb35-46" aria-hidden="true" tabindex="-1"></a>                        <span class="at">best_of_3 =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb35-47"><a href="#cb35-47" aria-hidden="true" tabindex="-1"></a>                        <span class="at">advantage =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb35-48"><a href="#cb35-48" aria-hidden="true" tabindex="-1"></a>                        <span class="at">type =</span> <span class="st">"mean"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-49"><a href="#cb35-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(<span class="fu">as.numeric</span>(total_sets))) <span class="sc">|&gt;</span></span>
+<span id="cb35-50"><a href="#cb35-50" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fix last row in data set where set_number is 6, should be a 5</span></span>
+<span id="cb35-51"><a href="#cb35-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">ifelse</span>(pt_number <span class="sc">==</span> <span class="fu">max</span>(pt_number), <span class="st">'5'</span>, set_number)) <span class="sc">|&gt;</span></span>
+<span id="cb35-52"><a href="#cb35-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">set_number =</span> <span class="fu">as.factor</span>(set_number))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>plot_sin_alc_small_prior <span class="sc">|&gt;</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pt_number, <span class="at">y =</span> probability)) <span class="sc">+</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> win_prob_px, </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">color =</span> <span class="fu">factor</span>(<span class="st">"Small Prior"</span>, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Small Prior"</span>, <span class="st">"Large Prior"</span>, <span class="st">"Fixed Probability"</span>))), </span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">alpha =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> plot_sin_alc_large_prior, <span class="fu">aes</span>(<span class="at">y =</span> win_prob_px, <span class="at">color =</span> <span class="st">"Large Prior"</span>), <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> plot_sin_alc_fixed_prior, <span class="fu">aes</span>(<span class="at">y =</span> win_prob_px, <span class="at">color =</span> <span class="st">"Fixed Probability (0.68)"</span>), <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Point Number"</span>,</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Probability of Winning Match"</span>,</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Alcaraz vs Sinner US Open Quarterfinal 2022"</span>,</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Probability of Alcaraz Winning Match with Different Priors"</span>,</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Comparing Different Prior Distributions"</span>,</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Server"</span>) <span class="sc">+</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Small Prior"</span> <span class="ot">=</span> <span class="st">"red"</span>, <span class="st">"Large Prior"</span> <span class="ot">=</span> <span class="st">"blue"</span>, <span class="st">"Fixed Probability"</span> <span class="ot">=</span> <span class="st">"green"</span>),</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>                     <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Small Prior"</span>, <span class="st">"Large Prior"</span>, <span class="st">"Fixed Probability (0.68)"</span>)) <span class="sc">+</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>                  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">nrow</span>(plot_sin_alc_small_prior))) <span class="sc">+</span></span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_viridis_d</span>(<span class="at">end =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"text"</span>, <span class="at">x =</span> <span class="dv">110</span>, <span class="at">y =</span> <span class="fl">0.2</span>, <span class="at">label =</span> <span class="st">"Starting Win-Serve Probabilities:"</span>, <span class="at">size =</span> <span class="fl">3.5</span>, <span class="at">color =</span> <span class="st">"black"</span>) <span class="sc">+</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"text"</span>, <span class="at">x =</span> <span class="dv">110</span>, <span class="at">y =</span> <span class="fl">0.15</span>, </span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>           <span class="at">label =</span> <span class="fu">paste0</span>(<span class="st">"'Small Prior - '*p[alcaraz]: 0.6229*', '*p[sinner]: 0.5606"</span>), <span class="at">size =</span> <span class="fl">3.5</span>, <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>           <span class="at">parse =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"text"</span>, <span class="at">x =</span> <span class="dv">110</span>, <span class="at">y =</span> <span class="fl">0.1</span>, </span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>           <span class="at">label =</span> <span class="fu">paste0</span>(<span class="st">"'Large Prior - '*p[alcaraz]: 0.61768*', '*p[sinner]: 0.6056"</span>), <span class="at">size =</span> <span class="fl">3.5</span>, <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>           <span class="at">parse =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"text"</span>, <span class="at">x =</span> <span class="dv">110</span>, <span class="at">y =</span> <span class="fl">0.05</span>, </span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>           <span class="at">label =</span> <span class="st">"'Fixed Probability - '*p[alcaraz]: 0.68*', '*p[sinner]: 0.68"</span>, <span class="at">size =</span> <span class="fl">3.5</span>, <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a>           <span class="at">parse =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Scale for colour is already present.
+Adding another scale for colour, which will replace the existing scale.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project_Write_Up_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Using different size priors changes the probabilities of Alcaraz and Sinner winning a point on their serve at the start of the match, and lead to different probabilities of Alcaraz winning the overall match.</p>
+</section>
+<section id="appendix" class="level3">
+<h3 class="anchored" data-anchor-id="appendix">Appendix</h3>
+<section id="reading-in-match-data" class="level4">
+<h4 class="anchored" data-anchor-id="reading-in-match-data">Reading in Match data</h4>
+<p>Function that reads in ATP and WTA match data from Jeff Sackmann’s GitHub repository.</p>
+<p>Inputs: * <code>ext</code>: extension of the file to read in. Must start with ‘atp’ or ‘wta’</p>
+<p>Output: * Data frame with data on matches from the specified extension</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>read_matches <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">ext =</span> <span class="st">"atp_matches_2022.csv"</span>) {</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">substr</span>(ext, <span class="dv">1</span>, <span class="dv">3</span>) <span class="sc">==</span> <span class="st">"atp"</span>) {</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/"</span>, ext)</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">substr</span>(ext, <span class="dv">1</span>, <span class="dv">3</span>) <span class="sc">==</span> <span class="st">"wta"</span>) {</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master/"</span>, ext)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid extension. Extension must start with 'atp' or 'wta'."</span>)</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(url, <span class="at">col_types =</span> <span class="fu">list</span>(<span class="at">match_num =</span> <span class="fu">col_character</span>())) <span class="sc">|&gt;</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">winner_seed =</span> <span class="fu">as.numeric</span>(winner_seed)) <span class="sc">|&gt;</span></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">loser_seed =</span> <span class="fu">as.numeric</span>(loser_seed))</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(df)</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="creating-prior-distributions" class="level4">
+<h4 class="anchored" data-anchor-id="creating-prior-distributions">Creating Prior Distributions</h4>
+<p>Function that creates prior distributions of player probabilities of winning a point on serve at the start of a match.</p>
+<p>Inputs: * <code>ext</code>: extension of the file to read in. Must start with ‘atp’ or ‘wta’. * <code>tourn_name</code>: name of the tournaments to include in prior * <code>surf</code>: surface of the tournaments to include in prior * <code>start_date</code>: start date of the tournaments to include in prior * <code>end_date</code>: end date of the tournaments to include in prior * <code>player1</code>: name of player 1 * <code>player2</code>: name of player 2 * <code>ref_player</code>: name of reference player</p>
+<p>Output: * Data frame with: - probability of player1 winning a point on serve at the start of the match - sd of the probability of player1 winning a point on serve at the start of the match - probability of player1 winning a point on return at the start of the match - sd of the probability of player1 winning a point on return at the start of the match * Note that the probabilities and sd are on the log odds scale * Note that we can calculate the probability of player2 winning a point on serve at the start of the match by subtracting the probability of player1 winning a point on return at the start of the match from 1</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>create_prior <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">ext =</span> <span class="fu">c</span>(<span class="st">"atp_matches_2021.csv"</span>,</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"atp_matches_2022.csv"</span>),</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">tourn_name =</span> <span class="st">"Us Open"</span>,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">surf =</span> <span class="st">"Hard"</span>,</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">start_date =</span> <span class="st">"2021-08-30"</span>,</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">end_date =</span> <span class="st">"2022-09-06"</span>,</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>                         <span class="at">player1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>                         <span class="at">player2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ref_player =</span> <span class="st">"Novak Djokovic"</span>) {</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  matches <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map</span>(ext, read_matches) <span class="sc">|&gt;</span></span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bind_rows</span>() <span class="sc">|&gt;</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">round =</span> <span class="fu">case_when</span>(round <span class="sc">==</span> <span class="st">"F"</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>                             round <span class="sc">==</span> <span class="st">"SF"</span> <span class="sc">~</span> <span class="dv">4</span>,</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>                             round <span class="sc">==</span> <span class="st">"QF"</span> <span class="sc">~</span> <span class="dv">8</span>,</span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>                             round <span class="sc">==</span> <span class="st">"R16"</span> <span class="sc">~</span> <span class="dv">16</span>,</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>                             round <span class="sc">==</span> <span class="st">"R32"</span> <span class="sc">~</span> <span class="dv">32</span>,</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>                             round <span class="sc">==</span> <span class="st">"R64"</span> <span class="sc">~</span> <span class="dv">64</span>,</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>                             round <span class="sc">==</span> <span class="st">"R128"</span> <span class="sc">~</span> <span class="dv">128</span>,</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>                             <span class="at">.default =</span> <span class="cn">NA</span>)) <span class="do">## covers RR matches</span></span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>  <span class="do">## figure out match of interest based on players and tourn_name</span></span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>  match_of_interest <span class="ot">&lt;-</span> matches <span class="sc">|&gt;</span> <span class="fu">filter</span>(tourney_name <span class="sc">==</span> tourn_name) <span class="sc">|&gt;</span></span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>((winner_name <span class="sc">==</span> player1 <span class="sc">|</span> winner_name <span class="sc">==</span> player2) <span class="sc">&amp;</span></span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>             (loser_name <span class="sc">==</span> player1 <span class="sc">|</span> loser_name <span class="sc">==</span> player2))</span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a>  <span class="do">## return an error if a player or tournament is misspelled or</span></span>
+<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a>  <span class="do">## the match-up did not happen for that particular tournament</span></span>
+<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(match_of_interest) <span class="sc">&lt;</span> <span class="dv">1</span>) {</span>
+<span id="cb39-30"><a href="#cb39-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"There is no match for the specified players and tournament."</span>)</span>
+<span id="cb39-31"><a href="#cb39-31" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">nrow</span>(match_of_interest) <span class="sc">&gt;</span> <span class="dv">1</span>) {</span>
+<span id="cb39-32"><a href="#cb39-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"There is more than one match for the specified players and tournament."</span>)</span>
+<span id="cb39-33"><a href="#cb39-33" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb39-34"><a href="#cb39-34" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-35"><a href="#cb39-35" aria-hidden="true" tabindex="-1"></a>  <span class="do">## grab the round from the match of interest</span></span>
+<span id="cb39-36"><a href="#cb39-36" aria-hidden="true" tabindex="-1"></a>  round_of_interest <span class="ot">&lt;-</span> match_of_interest <span class="sc">|&gt;</span> <span class="fu">pull</span>(round)</span>
+<span id="cb39-37"><a href="#cb39-37" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-38"><a href="#cb39-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter for relevant matches</span></span>
+<span id="cb39-39"><a href="#cb39-39" aria-hidden="true" tabindex="-1"></a>  prior <span class="ot">&lt;-</span> matches <span class="sc">|&gt;</span></span>
+<span id="cb39-40"><a href="#cb39-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">tourney_date =</span> lubridate<span class="sc">::</span><span class="fu">ymd</span>(tourney_date)) <span class="sc">|&gt;</span></span>
+<span id="cb39-41"><a href="#cb39-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>((tourney_name <span class="sc">==</span> tourn_name <span class="sc">|</span> surface <span class="sc">==</span> surf) <span class="sc">&amp;</span></span>
+<span id="cb39-42"><a href="#cb39-42" aria-hidden="true" tabindex="-1"></a>             (tourney_date <span class="sc">&lt;=</span> lubridate<span class="sc">::</span><span class="fu">ymd</span>(end_date) <span class="sc">&amp;</span> tourney_date <span class="sc">&gt;=</span> lubridate<span class="sc">::</span><span class="fu">ymd</span>(start_date))) <span class="sc">|&gt;</span></span>
+<span id="cb39-43"><a href="#cb39-43" aria-hidden="true" tabindex="-1"></a>    <span class="do">## add a filter to remove matches beyond the match of interest</span></span>
+<span id="cb39-44"><a href="#cb39-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>((tourney_name <span class="sc">!=</span> tourn_name) <span class="sc">|</span></span>
+<span id="cb39-45"><a href="#cb39-45" aria-hidden="true" tabindex="-1"></a>             (tourney_name <span class="sc">==</span> tourn_name <span class="sc">&amp;</span> lubridate<span class="sc">::</span><span class="fu">year</span>(tourney_date) <span class="sc">!=</span> lubridate<span class="sc">::</span><span class="fu">year</span>(end_date)) <span class="sc">|</span></span>
+<span id="cb39-46"><a href="#cb39-46" aria-hidden="true" tabindex="-1"></a>             (tourney_name <span class="sc">==</span> tourn_name <span class="sc">&amp;</span> round <span class="sc">&gt;</span> round_of_interest))</span>
+<span id="cb39-47"><a href="#cb39-47" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-48"><a href="#cb39-48" aria-hidden="true" tabindex="-1"></a>  prior_points <span class="ot">&lt;-</span> prior <span class="sc">|&gt;</span></span>
+<span id="cb39-49"><a href="#cb39-49" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">11</span>,<span class="dv">17</span>,<span class="dv">19</span>,<span class="dv">24</span>,<span class="dv">30</span>,<span class="dv">32</span>,<span class="dv">33</span>,<span class="dv">39</span>,<span class="dv">41</span>,<span class="dv">42</span>,<span class="dv">46</span>,<span class="dv">48</span>) <span class="sc">|&gt;</span></span>
+<span id="cb39-50"><a href="#cb39-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">w_svpt_w =</span> w_1stWon <span class="sc">+</span> w_2ndWon,</span>
+<span id="cb39-51"><a href="#cb39-51" aria-hidden="true" tabindex="-1"></a>           <span class="at">w_svpt_l =</span> w_svpt <span class="sc">-</span> w_svpt_w,</span>
+<span id="cb39-52"><a href="#cb39-52" aria-hidden="true" tabindex="-1"></a>           <span class="at">l_svpt_w =</span> l_1stWon <span class="sc">+</span> l_2ndWon,</span>
+<span id="cb39-53"><a href="#cb39-53" aria-hidden="true" tabindex="-1"></a>           <span class="at">l_svpt_l =</span> l_svpt <span class="sc">-</span> l_svpt_w) <span class="sc">|&gt;</span></span>
+<span id="cb39-54"><a href="#cb39-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(winner_name, loser_name, w_svpt_w, w_svpt_l, l_svpt_w, l_svpt_l, match_num,</span>
+<span id="cb39-55"><a href="#cb39-55" aria-hidden="true" tabindex="-1"></a>           <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">7</span>, <span class="dv">9</span>, <span class="dv">16</span><span class="sc">:</span><span class="dv">17</span>) <span class="sc">|&gt;</span></span>
+<span id="cb39-56"><a href="#cb39-56" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(<span class="st">"w_svpt_w"</span>, <span class="st">"w_svpt_l"</span>, <span class="st">"l_svpt_w"</span>, <span class="st">"l_svpt_l"</span>),</span>
+<span id="cb39-57"><a href="#cb39-57" aria-hidden="true" tabindex="-1"></a>                 <span class="at">names_to =</span> <span class="st">"won_point"</span>,</span>
+<span id="cb39-58"><a href="#cb39-58" aria-hidden="true" tabindex="-1"></a>                 <span class="at">values_to =</span> <span class="st">"server"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb39-59"><a href="#cb39-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">pt_winner =</span> <span class="fu">recode</span>(</span>
+<span id="cb39-60"><a href="#cb39-60" aria-hidden="true" tabindex="-1"></a>      won_point,</span>
+<span id="cb39-61"><a href="#cb39-61" aria-hidden="true" tabindex="-1"></a>      <span class="st">"w_svpt_w"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb39-62"><a href="#cb39-62" aria-hidden="true" tabindex="-1"></a>      <span class="st">"w_svpt_l"</span> <span class="ot">=</span> <span class="dv">0</span>,</span>
+<span id="cb39-63"><a href="#cb39-63" aria-hidden="true" tabindex="-1"></a>      <span class="st">"l_svpt_w"</span> <span class="ot">=</span> <span class="dv">0</span>,</span>
+<span id="cb39-64"><a href="#cb39-64" aria-hidden="true" tabindex="-1"></a>      <span class="st">"l_svpt_l"</span> <span class="ot">=</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb39-65"><a href="#cb39-65" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">pt_server =</span> <span class="fu">recode</span>(</span>
+<span id="cb39-66"><a href="#cb39-66" aria-hidden="true" tabindex="-1"></a>      won_point,</span>
+<span id="cb39-67"><a href="#cb39-67" aria-hidden="true" tabindex="-1"></a>      <span class="st">"w_svpt_w"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb39-68"><a href="#cb39-68" aria-hidden="true" tabindex="-1"></a>      <span class="st">"w_svpt_l"</span> <span class="ot">=</span> <span class="dv">1</span>,</span>
+<span id="cb39-69"><a href="#cb39-69" aria-hidden="true" tabindex="-1"></a>      <span class="st">"l_svpt_w"</span> <span class="ot">=</span> <span class="dv">0</span>,</span>
+<span id="cb39-70"><a href="#cb39-70" aria-hidden="true" tabindex="-1"></a>      <span class="st">"l_svpt_l"</span> <span class="ot">=</span> <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb39-71"><a href="#cb39-71" aria-hidden="true" tabindex="-1"></a>    <span class="co"># remove rows where server is NA (walkovers)</span></span>
+<span id="cb39-72"><a href="#cb39-72" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(server))</span>
+<span id="cb39-73"><a href="#cb39-73" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-74"><a href="#cb39-74" aria-hidden="true" tabindex="-1"></a>  prior_points_uncount <span class="ot">&lt;-</span> <span class="fu">uncount</span>(prior_points, <span class="at">weights =</span> <span class="fu">as.numeric</span>(server)) <span class="sc">|&gt;</span></span>
+<span id="cb39-75"><a href="#cb39-75" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">p1_server =</span> <span class="fu">ifelse</span>(pt_server <span class="sc">==</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb39-76"><a href="#cb39-76" aria-hidden="true" tabindex="-1"></a>           <span class="at">p2_server =</span> <span class="fu">ifelse</span>(pt_server <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb39-77"><a href="#cb39-77" aria-hidden="true" tabindex="-1"></a>    <span class="co"># reorganize columns</span></span>
+<span id="cb39-78"><a href="#cb39-78" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(winner_name, loser_name, pt_winner, p1_server, p2_server, <span class="fu">everything</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb39-79"><a href="#cb39-79" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="at">player1 =</span> winner_name, <span class="at">player2 =</span> loser_name)</span>
+<span id="cb39-80"><a href="#cb39-80" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-81"><a href="#cb39-81" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Now fit the model to your point data with serving effects</span></span>
+<span id="cb39-82"><a href="#cb39-82" aria-hidden="true" tabindex="-1"></a>  comp_mod <span class="ot">&lt;-</span> <span class="fu">comp_glm</span>(pt_winner <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">data =</span> prior_points_uncount,</span>
+<span id="cb39-83"><a href="#cb39-83" aria-hidden="true" tabindex="-1"></a>                       <span class="at">p1 =</span> <span class="st">"player1"</span>, <span class="at">p2 =</span> <span class="st">"player2"</span>,</span>
+<span id="cb39-84"><a href="#cb39-84" aria-hidden="true" tabindex="-1"></a>                       <span class="at">p1_effects =</span> <span class="sc">~</span> p1_server, <span class="at">p2_effects =</span> <span class="sc">~</span> p2_server,</span>
+<span id="cb39-85"><a href="#cb39-85" aria-hidden="true" tabindex="-1"></a>                       <span class="at">ref_player =</span> ref_player)</span>
+<span id="cb39-86"><a href="#cb39-86" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-87"><a href="#cb39-87" aria-hidden="true" tabindex="-1"></a>  match_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb39-88"><a href="#cb39-88" aria-hidden="true" tabindex="-1"></a>    <span class="at">player1 =</span> (player1),</span>
+<span id="cb39-89"><a href="#cb39-89" aria-hidden="true" tabindex="-1"></a>    <span class="at">player2 =</span> (player2),</span>
+<span id="cb39-90"><a href="#cb39-90" aria-hidden="true" tabindex="-1"></a>    <span class="at">p1_server =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb39-91"><a href="#cb39-91" aria-hidden="true" tabindex="-1"></a>    <span class="at">p2_server =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb39-92"><a href="#cb39-92" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-93"><a href="#cb39-93" aria-hidden="true" tabindex="-1"></a>  aug_mod <span class="ot">&lt;-</span> <span class="fu">aug_mod</span>(comp_mod, <span class="at">newdata =</span> match_data)</span>
+<span id="cb39-94"><a href="#cb39-94" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb39-95"><a href="#cb39-95" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(aug_mod)</span>
+<span id="cb39-96"><a href="#cb39-96" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="reading-in-point-by-point-data" class="level4">
+<h4 class="anchored" data-anchor-id="reading-in-point-by-point-data">Reading in Point-by-Point data</h4>
+<p>Function that reads in point-by-point data from Jeff Sackmann’s GitHub repository for a specific match of interest.</p>
+<p>Inputs: * <code>ext</code>: extension of the file to read in, tournament that contains the match of interest * <code>ID</code>: match ID of the match to read in</p>
+<p>Outputs: * Data frame with the point-by-point data for the specified match with player1 serving * Data frame with the point-by-point data for the specified match with player2 serving</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstanarm)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>wrangle_point_level <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">ext =</span> <span class="st">"2022-usopen-points.csv"</span>,</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">ID =</span> <span class="st">"2022-usopen-1503"</span>) {</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="fu">paste0</span>(<span class="st">"https://raw.githubusercontent.com/JeffSackmann/tennis_slam_pointbypoint/master/"</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>                               ext))</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(match_id <span class="sc">==</span> ID) <span class="sc">|&gt;</span></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">P1GamesWon =</span> <span class="fu">ifelse</span>(SetWinner <span class="sc">!=</span> <span class="dv">0</span>, <span class="dv">0</span>, P1GamesWon),</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">P2GamesWon =</span> <span class="fu">ifelse</span>(SetWinner <span class="sc">!=</span> <span class="dv">0</span>, <span class="dv">0</span>, P2GamesWon)) <span class="sc">|&gt;</span></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(PointWinner <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> <span class="fu">select</span>(PointWinner,</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>                     P1Score,</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>                     P2Score,</span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>                     P1GamesWon,</span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>                     P2GamesWon,</span>
+<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>                     SetWinner,</span>
+<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a>                     PointServer) <span class="sc">|&gt;</span></span>
+<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">P1Score =</span> <span class="fu">ifelse</span>(P1Score <span class="sc">==</span> <span class="st">"AD"</span>, <span class="dv">4</span>, P1Score),</span>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>           <span class="at">P2Score =</span> <span class="fu">ifelse</span>(P2Score <span class="sc">==</span> <span class="st">"AD"</span>, <span class="dv">4</span>, P2Score),</span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>           <span class="at">P1PointsWon =</span> <span class="fu">as.numeric</span>(P1Score),</span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>           <span class="at">P2PointsWon =</span> <span class="fu">as.numeric</span>(P2Score)) <span class="sc">|&gt;</span></span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">P1PointsWon =</span> <span class="fu">case_when</span>(P1Score <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>,</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a>                                   P1Score <span class="sc">==</span> <span class="dv">15</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a>                                   P1Score <span class="sc">==</span> <span class="dv">30</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a>                                   P1Score <span class="sc">==</span> <span class="dv">40</span> <span class="sc">~</span> <span class="dv">3</span>,</span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a>                                   <span class="cn">TRUE</span> <span class="sc">~</span> P1PointsWon),</span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>           <span class="at">P2PointsWon =</span> <span class="fu">case_when</span>(P2Score <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>,</span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a>                                   P2Score <span class="sc">==</span> <span class="dv">15</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a>                                   P2Score <span class="sc">==</span> <span class="dv">30</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a>                                   P2Score <span class="sc">==</span> <span class="dv">40</span> <span class="sc">~</span> <span class="dv">3</span>,</span>
+<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a>                                   <span class="cn">TRUE</span> <span class="sc">~</span> P2PointsWon)) <span class="sc">|&gt;</span></span>
+<span id="cb40-32"><a href="#cb40-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">pt_number =</span> <span class="fu">row_number</span>())</span>
+<span id="cb40-33"><a href="#cb40-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb40-34"><a href="#cb40-34" aria-hidden="true" tabindex="-1"></a>  p1_serving <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> <span class="fu">filter</span>(PointServer <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb40-35"><a href="#cb40-35" aria-hidden="true" tabindex="-1"></a>  p2_serving <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> <span class="fu">filter</span>(PointServer <span class="sc">==</span> <span class="dv">2</span>)</span>
+<span id="cb40-36"><a href="#cb40-36" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb40-37"><a href="#cb40-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(p1_serving, p2_serving))</span>
+<span id="cb40-38"><a href="#cb40-38" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="getting-probabilities-of-winning-point-on-serve-throughout-the-match" class="level4">
+<h4 class="anchored" data-anchor-id="getting-probabilities-of-winning-point-on-serve-throughout-the-match">Getting Probabilities of Winning Point on Serve Throughout the Match</h4>
+<p>Function that calculates the probabilities of winning a point on serve for each player throughout the match.</p>
+<p>MAKE NOTE OF stan_glm from compr / comp_prior_start.R</p>
+<p>Inputs: * <code>p1_serving_df</code>: data frame with point-by-point data for player1 serving from match of interest * <code>p2_serving_df</code>: data frame with point-by-point data for player2 serving from match of interest * <code>p1</code>: name of player1 * <code>p2</code>: name of player2 * <code>p1_original_prob</code>: original probability of player1 winning a point on serve (from create_prior, on log odds scale) * <code>p1_original_se</code>: original standard error of player1 winning a point on serve (from create_prior, on log odds scale) * <code>p2_original_prob</code>: original probability of player2 winning a point on serve (from create_prior, on log odds scale) * <code>p2_original_se</code>: original standard error of player2 winning a point on serve (from create_prior, on log odds scale)</p>
+<p>Output: * Data frame with point-level data and probabilities of winning a point on serve for each player throughout the match</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>get_probabilities_df <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">p1_serving_df =</span> sin_serving,</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_serving_df =</span> alc_serving,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1 =</span> <span class="st">"Jannik Sinner"</span>,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2 =</span> <span class="st">"Carlos Alcaraz"</span>,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_prob =</span> <span class="fl">0.4288085</span>,</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p1_original_se =</span> <span class="fl">0.04919170</span>,</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_prob =</span> <span class="fl">0.4795682</span>,</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">p2_original_se =</span> <span class="fl">0.04971023</span>) {</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  p1_niter <span class="ot">&lt;-</span> p1_serving_df <span class="sc">|&gt;</span> <span class="fu">nrow</span>()</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>  p1_prob_store <span class="ot">&lt;-</span> <span class="fu">double</span>()</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="do">## create empty list to store posterior samples</span></span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>  p1_prob_store_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>  p1_serving <span class="ot">&lt;-</span> p1_serving_df <span class="sc">|&gt;</span></span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">player1 =</span> p1,</span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>           <span class="at">player2 =</span> p2) <span class="sc">|&gt;</span></span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># also create indicator if serving player won the point</span></span>
+<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">server_won =</span> <span class="fu">ifelse</span>(PointWinner <span class="sc">==</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>p1_niter) {</span>
+<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a>    mod <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(server_won <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> p1_serving <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span>i),</span>
+<span id="cb41-23"><a href="#cb41-23" aria-hidden="true" tabindex="-1"></a>                    <span class="at">family =</span> binomial,</span>
+<span id="cb41-24"><a href="#cb41-24" aria-hidden="true" tabindex="-1"></a>                    <span class="at">prior_intercept =</span> <span class="fu">normal</span>(p1_original_prob, p1_original_se),</span>
+<span id="cb41-25"><a href="#cb41-25" aria-hidden="true" tabindex="-1"></a>                    <span class="at">seed =</span> <span class="dv">123</span>)</span>
+<span id="cb41-26"><a href="#cb41-26" aria-hidden="true" tabindex="-1"></a>    p1_prob_store[i] <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod) <span class="sc">|&gt;</span> <span class="fu">expit</span>()</span>
+<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a>    p1_prob_store_list[[i]] <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mod) <span class="sc">|&gt;</span> <span class="fu">expit</span>() <span class="do">## grab posterior samples</span></span>
+<span id="cb41-28"><a href="#cb41-28" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb41-29"><a href="#cb41-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-30"><a href="#cb41-30" aria-hidden="true" tabindex="-1"></a>  p1_serving <span class="ot">&lt;-</span> p1_serving <span class="sc">|&gt;</span></span>
+<span id="cb41-31"><a href="#cb41-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">p1_wserv_prob =</span> p1_prob_store,</span>
+<span id="cb41-32"><a href="#cb41-32" aria-hidden="true" tabindex="-1"></a>           <span class="at">p1_wserv_prob_list =</span> p1_prob_store_list)</span>
+<span id="cb41-33"><a href="#cb41-33" aria-hidden="true" tabindex="-1"></a>  <span class="do">## can have a column in a data frame that is a column of lists</span></span>
+<span id="cb41-34"><a href="#cb41-34" aria-hidden="true" tabindex="-1"></a>  <span class="do">## each row has a list of 4000 posterior samples</span></span>
+<span id="cb41-35"><a href="#cb41-35" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-36"><a href="#cb41-36" aria-hidden="true" tabindex="-1"></a>  p2_niter <span class="ot">&lt;-</span> p2_serving_df <span class="sc">|&gt;</span> <span class="fu">nrow</span>()</span>
+<span id="cb41-37"><a href="#cb41-37" aria-hidden="true" tabindex="-1"></a>  p2_prob_store <span class="ot">&lt;-</span> <span class="fu">double</span>()</span>
+<span id="cb41-38"><a href="#cb41-38" aria-hidden="true" tabindex="-1"></a>  p2_prob_store_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb41-39"><a href="#cb41-39" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-40"><a href="#cb41-40" aria-hidden="true" tabindex="-1"></a>  p2_serving <span class="ot">&lt;-</span> p2_serving_df <span class="sc">|&gt;</span></span>
+<span id="cb41-41"><a href="#cb41-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">player1 =</span> p1,</span>
+<span id="cb41-42"><a href="#cb41-42" aria-hidden="true" tabindex="-1"></a>           <span class="at">player2 =</span> p2) <span class="sc">|&gt;</span></span>
+<span id="cb41-43"><a href="#cb41-43" aria-hidden="true" tabindex="-1"></a>    <span class="co"># also create indicator if serving player won the point</span></span>
+<span id="cb41-44"><a href="#cb41-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">server_won =</span> <span class="fu">ifelse</span>(PointWinner <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb41-45"><a href="#cb41-45" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-46"><a href="#cb41-46" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>p2_niter) {</span>
+<span id="cb41-47"><a href="#cb41-47" aria-hidden="true" tabindex="-1"></a>    mod <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(server_won <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> p2_serving <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span>i),</span>
+<span id="cb41-48"><a href="#cb41-48" aria-hidden="true" tabindex="-1"></a>                    <span class="at">family =</span> binomial,</span>
+<span id="cb41-49"><a href="#cb41-49" aria-hidden="true" tabindex="-1"></a>                    <span class="at">prior_intercept =</span> <span class="fu">normal</span>(p2_original_prob, p2_original_se),</span>
+<span id="cb41-50"><a href="#cb41-50" aria-hidden="true" tabindex="-1"></a>                    <span class="at">seed =</span> <span class="dv">123</span>)</span>
+<span id="cb41-51"><a href="#cb41-51" aria-hidden="true" tabindex="-1"></a>    p2_prob_store[i] <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod) <span class="sc">|&gt;</span> <span class="fu">expit</span>()</span>
+<span id="cb41-52"><a href="#cb41-52" aria-hidden="true" tabindex="-1"></a>    p2_prob_store_list[[i]] <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mod) <span class="sc">|&gt;</span> <span class="fu">expit</span>()</span>
+<span id="cb41-53"><a href="#cb41-53" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb41-54"><a href="#cb41-54" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-55"><a href="#cb41-55" aria-hidden="true" tabindex="-1"></a>  p2_serving <span class="ot">&lt;-</span> p2_serving <span class="sc">|&gt;</span></span>
+<span id="cb41-56"><a href="#cb41-56" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">p2_wserv_prob =</span> p2_prob_store,</span>
+<span id="cb41-57"><a href="#cb41-57" aria-hidden="true" tabindex="-1"></a>           <span class="at">p2_wserv_prob_list =</span> p2_prob_store_list)</span>
+<span id="cb41-58"><a href="#cb41-58" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-59"><a href="#cb41-59" aria-hidden="true" tabindex="-1"></a>  <span class="co"># combine the data frames and arrange by pt_number</span></span>
+<span id="cb41-60"><a href="#cb41-60" aria-hidden="true" tabindex="-1"></a>  combined_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(p1_serving, p2_serving) <span class="sc">|&gt;</span></span>
+<span id="cb41-61"><a href="#cb41-61" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(pt_number) <span class="sc">|&gt;</span></span>
+<span id="cb41-62"><a href="#cb41-62" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(pt_number, player1, player2, PointServer, PointWinner, server_won,</span>
+<span id="cb41-63"><a href="#cb41-63" aria-hidden="true" tabindex="-1"></a>           p1_wserv_prob, p2_wserv_prob,</span>
+<span id="cb41-64"><a href="#cb41-64" aria-hidden="true" tabindex="-1"></a>           p1_wserv_prob_list, p2_wserv_prob_list,</span>
+<span id="cb41-65"><a href="#cb41-65" aria-hidden="true" tabindex="-1"></a>           <span class="fu">everything</span>())</span>
+<span id="cb41-66"><a href="#cb41-66" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-67"><a href="#cb41-67" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  Fill in the missing probabilities with the previously known probability</span></span>
+<span id="cb41-68"><a href="#cb41-68" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  for the list column, fill in the missing probabilities for the first</span></span>
+<span id="cb41-69"><a href="#cb41-69" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  match with a sample from the prior</span></span>
+<span id="cb41-70"><a href="#cb41-70" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (combined_df<span class="sc">$</span>PointServer[<span class="dv">1</span>] <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb41-71"><a href="#cb41-71" aria-hidden="true" tabindex="-1"></a>    combined_df[<span class="dv">1</span>, <span class="st">"p2_wserv_prob"</span>] <span class="ot">&lt;-</span> p2_original_prob <span class="sc">|&gt;</span> <span class="fu">expit</span>()</span>
+<span id="cb41-72"><a href="#cb41-72" aria-hidden="true" tabindex="-1"></a>    combined_df[<span class="dv">1</span>, <span class="st">"p2_wserv_prob_list"</span>][[<span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">4000</span>, p2_original_prob,</span>
+<span id="cb41-73"><a href="#cb41-73" aria-hidden="true" tabindex="-1"></a>                                                       p2_original_se) <span class="sc">|&gt;</span> <span class="fu">expit</span>() <span class="sc">|&gt;</span></span>
+<span id="cb41-74"><a href="#cb41-74" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="ot">=</span> value) <span class="sc">|&gt;</span> <span class="fu">list</span>()</span>
+<span id="cb41-75"><a href="#cb41-75" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb41-76"><a href="#cb41-76" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb41-77"><a href="#cb41-77" aria-hidden="true" tabindex="-1"></a>    combined_df[<span class="dv">1</span>, <span class="st">"p1_wserv_prob"</span>] <span class="ot">&lt;-</span> p1_original_prob <span class="sc">|&gt;</span> <span class="fu">expit</span>()</span>
+<span id="cb41-78"><a href="#cb41-78" aria-hidden="true" tabindex="-1"></a>    combined_df[<span class="dv">1</span>, <span class="st">"p1_wserv_prob_list"</span>][[<span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">4000</span>, p1_original_prob,</span>
+<span id="cb41-79"><a href="#cb41-79" aria-hidden="true" tabindex="-1"></a>                                                       p1_original_se) <span class="sc">|&gt;</span> <span class="fu">expit</span>() <span class="sc">|&gt;</span></span>
+<span id="cb41-80"><a href="#cb41-80" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="ot">=</span> value) <span class="sc">|&gt;</span> <span class="fu">list</span>()</span>
+<span id="cb41-81"><a href="#cb41-81" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb41-82"><a href="#cb41-82" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-83"><a href="#cb41-83" aria-hidden="true" tabindex="-1"></a>  combined_filled <span class="ot">&lt;-</span> combined_df <span class="sc">|&gt;</span></span>
+<span id="cb41-84"><a href="#cb41-84" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fill</span>(p1_wserv_prob, p2_wserv_prob,</span>
+<span id="cb41-85"><a href="#cb41-85" aria-hidden="true" tabindex="-1"></a>         p1_wserv_prob_list, p2_wserv_prob_list,</span>
+<span id="cb41-86"><a href="#cb41-86" aria-hidden="true" tabindex="-1"></a>         <span class="at">.direction =</span> <span class="st">"down"</span>)</span>
+<span id="cb41-87"><a href="#cb41-87" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-88"><a href="#cb41-88" aria-hidden="true" tabindex="-1"></a>  combined_final <span class="ot">&lt;-</span> combined_filled <span class="sc">|&gt;</span></span>
+<span id="cb41-89"><a href="#cb41-89" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">P1SetsWon =</span> <span class="fu">cumsum</span>(SetWinner <span class="sc">==</span> <span class="dv">1</span>),</span>
+<span id="cb41-90"><a href="#cb41-90" aria-hidden="true" tabindex="-1"></a>           <span class="at">P2SetsWon =</span> <span class="fu">cumsum</span>(SetWinner <span class="sc">==</span> <span class="dv">2</span>))</span>
+<span id="cb41-91"><a href="#cb41-91" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-92"><a href="#cb41-92" aria-hidden="true" tabindex="-1"></a>  <span class="do">## </span><span class="al">TODO</span></span>
+<span id="cb41-93"><a href="#cb41-93" aria-hidden="true" tabindex="-1"></a>  <span class="do">## make p1_wserv_prob and p2_wserv_prob columns of</span></span>
+<span id="cb41-94"><a href="#cb41-94" aria-hidden="true" tabindex="-1"></a>  <span class="do">## lists with the posterior samples</span></span>
+<span id="cb41-95"><a href="#cb41-95" aria-hidden="true" tabindex="-1"></a>  combined_final_cleaned <span class="ot">&lt;-</span> combined_final <span class="sc">|&gt;</span></span>
+<span id="cb41-96"><a href="#cb41-96" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,</span>
+<span id="cb41-97"><a href="#cb41-97" aria-hidden="true" tabindex="-1"></a>           P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon,</span>
+<span id="cb41-98"><a href="#cb41-98" aria-hidden="true" tabindex="-1"></a>           p1_wserv_prob_list, p2_wserv_prob_list) <span class="sc">|&gt;</span></span>
+<span id="cb41-99"><a href="#cb41-99" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">PointServer =</span> <span class="fu">case_when</span>(P1PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> P2PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> PointServer <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb41-100"><a href="#cb41-100" aria-hidden="true" tabindex="-1"></a>                                   P1PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> P2PointsWon <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> PointServer <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb41-101"><a href="#cb41-101" aria-hidden="true" tabindex="-1"></a>                                   <span class="cn">TRUE</span> <span class="sc">~</span> PointServer))</span>
+<span id="cb41-102"><a href="#cb41-102" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb41-103"><a href="#cb41-103" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(combined_final_cleaned)</span>
+<span id="cb41-104"><a href="#cb41-104" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="getting-data-frame-for-plotting-win-probabilities" class="level4">
+<h4 class="anchored" data-anchor-id="getting-data-frame-for-plotting-win-probabilities">Getting Data Frame for Plotting Win Probabilities</h4>
+<p>Inputs: * <code>combined_df</code>: Data frame with all the match data (from get_probabilities_df) * <code>which_player_prob</code>: Which player’s win probability to plot (player1 or player2) * <code>best_of_3</code>: Whether the match is best of 3 sets (<code>FALSE</code> if best of 5, <code>TRUE</code> if best of 3) * <code>advantage</code>: Whether the match has a tiebreak in the final set (<code>FALSE</code> if no tiebreak, <code>TRUE</code> if tiebreak) * <code>type</code>: Type of plot to create (<code>mean</code> for mean win probability, <code>distribution</code> for distribution of win probability)</p>
+<p>Output: * Data frame with the necessary columns for plotting win probabilities</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>get_plot_df <span class="ot">&lt;-</span> <span class="cf">function</span>(combined_df,</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">which_player_prob =</span> <span class="dv">1</span>,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">best_of_3 =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">advantage =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">type =</span> <span class="st">"mean"</span>) {</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (type <span class="sc">!=</span> <span class="st">"mean"</span> <span class="sc">&amp;</span> type <span class="sc">!=</span> <span class="st">"distribution"</span>) {</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"`type` must be either 'mean' or 'distribution'"</span>)</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter for player 1 serving</span></span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>  p1_serv <span class="ot">&lt;-</span> combined_df <span class="sc">|&gt;</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(PointServer <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter for player 2 serving</span></span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>  p2_serv <span class="ot">&lt;-</span> combined_df <span class="sc">|&gt;</span></span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(PointServer <span class="sc">==</span> <span class="dv">2</span>)</span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (type <span class="sc">==</span> <span class="st">"mean"</span>) {</span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create tibble for player 1 serving to feed into in_match_win</span></span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a>    p1_serving_tib <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_a =</span> p1_serv<span class="sc">$</span>P1PointsWon,</span>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_b =</span> p1_serv<span class="sc">$</span>P2PointsWon,</span>
+<span id="cb42-24"><a href="#cb42-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_a =</span> p1_serv<span class="sc">$</span>P1GamesWon,</span>
+<span id="cb42-25"><a href="#cb42-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_b =</span> p1_serv<span class="sc">$</span>P2GamesWon,</span>
+<span id="cb42-26"><a href="#cb42-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_a =</span> p1_serv<span class="sc">$</span>P1SetsWon,</span>
+<span id="cb42-27"><a href="#cb42-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_b =</span> p1_serv<span class="sc">$</span>P2SetsWon,</span>
+<span id="cb42-28"><a href="#cb42-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">server.prob =</span> p1_serv<span class="sc">$</span>p1_wserv_prob,</span>
+<span id="cb42-29"><a href="#cb42-29" aria-hidden="true" tabindex="-1"></a>      <span class="at">returner.prob =</span> p1_serv<span class="sc">$</span>p2_wserv_prob</span>
+<span id="cb42-30"><a href="#cb42-30" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb42-31"><a href="#cb42-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-32"><a href="#cb42-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create tibble for player 2 serving to feed into in_match_win</span></span>
+<span id="cb42-33"><a href="#cb42-33" aria-hidden="true" tabindex="-1"></a>    p2_serving_tib <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb42-34"><a href="#cb42-34" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_a =</span> p2_serv<span class="sc">$</span>P2PointsWon,</span>
+<span id="cb42-35"><a href="#cb42-35" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_b =</span> p2_serv<span class="sc">$</span>P1PointsWon,</span>
+<span id="cb42-36"><a href="#cb42-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_a =</span> p2_serv<span class="sc">$</span>P2GamesWon,</span>
+<span id="cb42-37"><a href="#cb42-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_b =</span> p2_serv<span class="sc">$</span>P1GamesWon,</span>
+<span id="cb42-38"><a href="#cb42-38" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_a =</span> p2_serv<span class="sc">$</span>P2SetsWon,</span>
+<span id="cb42-39"><a href="#cb42-39" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_b =</span> p2_serv<span class="sc">$</span>P1SetsWon,</span>
+<span id="cb42-40"><a href="#cb42-40" aria-hidden="true" tabindex="-1"></a>      <span class="at">server.prob =</span> p2_serv<span class="sc">$</span>p2_wserv_prob,</span>
+<span id="cb42-41"><a href="#cb42-41" aria-hidden="true" tabindex="-1"></a>      <span class="at">returner.prob =</span> p2_serv<span class="sc">$</span>p1_wserv_prob</span>
+<span id="cb42-42"><a href="#cb42-42" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb42-43"><a href="#cb42-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-44"><a href="#cb42-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate probability of player 1 winning throughout the match</span></span>
+<span id="cb42-45"><a href="#cb42-45" aria-hidden="true" tabindex="-1"></a>    p1_win_prob <span class="ot">&lt;-</span> p1_serving_tib <span class="sc">|&gt;</span> <span class="fu">pmap</span>(in_match_win, <span class="at">bestof3 =</span> best_of_3,</span>
+<span id="cb42-46"><a href="#cb42-46" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">advantage =</span> advantage)</span>
+<span id="cb42-47"><a href="#cb42-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add probability to player 1 serving df</span></span>
+<span id="cb42-48"><a href="#cb42-48" aria-hidden="true" tabindex="-1"></a>    p1_serv<span class="sc">$</span>probability <span class="ot">&lt;-</span> p1_win_prob</span>
+<span id="cb42-49"><a href="#cb42-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># fix the probability column</span></span>
+<span id="cb42-50"><a href="#cb42-50" aria-hidden="true" tabindex="-1"></a>    p1_serv <span class="ot">&lt;-</span> p1_serv <span class="sc">|&gt;</span> <span class="fu">unnest</span>(probability)</span>
+<span id="cb42-51"><a href="#cb42-51" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-52"><a href="#cb42-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate probability of player 2 winning throughout the match</span></span>
+<span id="cb42-53"><a href="#cb42-53" aria-hidden="true" tabindex="-1"></a>    p2_win_prob <span class="ot">&lt;-</span> p2_serving_tib <span class="sc">|&gt;</span> <span class="fu">pmap</span>(in_match_win, <span class="at">bestof3 =</span> best_of_3,</span>
+<span id="cb42-54"><a href="#cb42-54" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">advantage =</span> advantage)</span>
+<span id="cb42-55"><a href="#cb42-55" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add probability to player 2 df</span></span>
+<span id="cb42-56"><a href="#cb42-56" aria-hidden="true" tabindex="-1"></a>    p2_serv<span class="sc">$</span>probability <span class="ot">&lt;-</span> p2_win_prob</span>
+<span id="cb42-57"><a href="#cb42-57" aria-hidden="true" tabindex="-1"></a>    <span class="co"># fix the probability column</span></span>
+<span id="cb42-58"><a href="#cb42-58" aria-hidden="true" tabindex="-1"></a>    p2_serv <span class="ot">&lt;-</span> p2_serv <span class="sc">|&gt;</span> <span class="fu">unnest</span>(probability)</span>
+<span id="cb42-59"><a href="#cb42-59" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-60"><a href="#cb42-60" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (type <span class="sc">==</span> <span class="st">"distribution"</span>) {</span>
+<span id="cb42-61"><a href="#cb42-61" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-62"><a href="#cb42-62" aria-hidden="true" tabindex="-1"></a>    p1_serving_tib <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb42-63"><a href="#cb42-63" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_a =</span> p1_serv<span class="sc">$</span>P1PointsWon,</span>
+<span id="cb42-64"><a href="#cb42-64" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_b =</span> p1_serv<span class="sc">$</span>P2PointsWon,</span>
+<span id="cb42-65"><a href="#cb42-65" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_a =</span> p1_serv<span class="sc">$</span>P1GamesWon,</span>
+<span id="cb42-66"><a href="#cb42-66" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_b =</span> p1_serv<span class="sc">$</span>P2GamesWon,</span>
+<span id="cb42-67"><a href="#cb42-67" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_a =</span> p1_serv<span class="sc">$</span>P1SetsWon,</span>
+<span id="cb42-68"><a href="#cb42-68" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_b =</span> p1_serv<span class="sc">$</span>P2SetsWon,</span>
+<span id="cb42-69"><a href="#cb42-69" aria-hidden="true" tabindex="-1"></a>      <span class="at">server.prob =</span> p1_serv<span class="sc">$</span>p1_wserv_prob_list,</span>
+<span id="cb42-70"><a href="#cb42-70" aria-hidden="true" tabindex="-1"></a>      <span class="at">returner.prob =</span> p1_serv<span class="sc">$</span>p2_wserv_prob_list</span>
+<span id="cb42-71"><a href="#cb42-71" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb42-72"><a href="#cb42-72" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-73"><a href="#cb42-73" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create tibble for player 2 serving to feed into in_match_win</span></span>
+<span id="cb42-74"><a href="#cb42-74" aria-hidden="true" tabindex="-1"></a>    p2_serving_tib <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb42-75"><a href="#cb42-75" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_a =</span> p2_serv<span class="sc">$</span>P2PointsWon,</span>
+<span id="cb42-76"><a href="#cb42-76" aria-hidden="true" tabindex="-1"></a>      <span class="at">point_b =</span> p2_serv<span class="sc">$</span>P1PointsWon,</span>
+<span id="cb42-77"><a href="#cb42-77" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_a =</span> p2_serv<span class="sc">$</span>P2GamesWon,</span>
+<span id="cb42-78"><a href="#cb42-78" aria-hidden="true" tabindex="-1"></a>      <span class="at">game_b =</span> p2_serv<span class="sc">$</span>P1GamesWon,</span>
+<span id="cb42-79"><a href="#cb42-79" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_a =</span> p2_serv<span class="sc">$</span>P2SetsWon,</span>
+<span id="cb42-80"><a href="#cb42-80" aria-hidden="true" tabindex="-1"></a>      <span class="at">set_b =</span> p2_serv<span class="sc">$</span>P1SetsWon,</span>
+<span id="cb42-81"><a href="#cb42-81" aria-hidden="true" tabindex="-1"></a>      <span class="at">server.prob =</span> p2_serv<span class="sc">$</span>p2_wserv_prob_list,</span>
+<span id="cb42-82"><a href="#cb42-82" aria-hidden="true" tabindex="-1"></a>      <span class="at">returner.prob =</span> p2_serv<span class="sc">$</span>p1_wserv_prob_list</span>
+<span id="cb42-83"><a href="#cb42-83" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb42-84"><a href="#cb42-84" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-85"><a href="#cb42-85" aria-hidden="true" tabindex="-1"></a>    <span class="do">## number of rows should be number of server1 points times 4000</span></span>
+<span id="cb42-86"><a href="#cb42-86" aria-hidden="true" tabindex="-1"></a>    <span class="do">## unnest() gives a warning letting us know we are using the</span></span>
+<span id="cb42-87"><a href="#cb42-87" aria-hidden="true" tabindex="-1"></a>    <span class="do">## "old" syntax, which is fine</span></span>
+<span id="cb42-88"><a href="#cb42-88" aria-hidden="true" tabindex="-1"></a>    p1_serving_tib <span class="ot">&lt;-</span> p1_serving_tib <span class="sc">|&gt;</span></span>
+<span id="cb42-89"><a href="#cb42-89" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unnest</span>(server.prob, returner.prob) <span class="sc">|&gt;</span></span>
+<span id="cb42-90"><a href="#cb42-90" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">server.prob =</span> <span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span>,</span>
+<span id="cb42-91"><a href="#cb42-91" aria-hidden="true" tabindex="-1"></a>             <span class="at">returner.prob =</span> <span class="st">`</span><span class="at">(Intercept)1</span><span class="st">`</span>)</span>
+<span id="cb42-92"><a href="#cb42-92" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-93"><a href="#cb42-93" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate probability of player 1 winning throughout the match</span></span>
+<span id="cb42-94"><a href="#cb42-94" aria-hidden="true" tabindex="-1"></a>    p1_win_prob <span class="ot">&lt;-</span> p1_serving_tib <span class="sc">|&gt;</span> <span class="fu">pmap</span>(in_match_win, <span class="at">bestof3 =</span> best_of_3,</span>
+<span id="cb42-95"><a href="#cb42-95" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">advantage =</span> advantage)</span>
+<span id="cb42-96"><a href="#cb42-96" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add probability to player 1 serving df</span></span>
+<span id="cb42-97"><a href="#cb42-97" aria-hidden="true" tabindex="-1"></a>    p1_serving_tib<span class="sc">$</span>probability <span class="ot">&lt;-</span> <span class="fu">unlist</span>(p1_win_prob)</span>
+<span id="cb42-98"><a href="#cb42-98" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-99"><a href="#cb42-99" aria-hidden="true" tabindex="-1"></a>    <span class="do">## create id for each point (should be 4000 rows for one point)</span></span>
+<span id="cb42-100"><a href="#cb42-100" aria-hidden="true" tabindex="-1"></a>    p1_serving_tib <span class="ot">&lt;-</span> p1_serving_tib <span class="sc">|&gt;</span></span>
+<span id="cb42-101"><a href="#cb42-101" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(p1_serv), <span class="at">each =</span> <span class="dv">4000</span>))</span>
+<span id="cb42-102"><a href="#cb42-102" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-103"><a href="#cb42-103" aria-hidden="true" tabindex="-1"></a>    p1_win_prob <span class="ot">&lt;-</span> p1_serving_tib <span class="sc">|&gt;</span> <span class="fu">group_by</span>(id) <span class="sc">|&gt;</span></span>
+<span id="cb42-104"><a href="#cb42-104" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">mean_prob =</span> <span class="fu">mean</span>(probability)) <span class="sc">|&gt;</span></span>
+<span id="cb42-105"><a href="#cb42-105" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pull</span>(mean_prob)</span>
+<span id="cb42-106"><a href="#cb42-106" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-107"><a href="#cb42-107" aria-hidden="true" tabindex="-1"></a>    p1_serv<span class="sc">$</span>probability <span class="ot">&lt;-</span> p1_win_prob</span>
+<span id="cb42-108"><a href="#cb42-108" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-109"><a href="#cb42-109" aria-hidden="true" tabindex="-1"></a>    <span class="do">## number of rows should be number of server1 points times 4000</span></span>
+<span id="cb42-110"><a href="#cb42-110" aria-hidden="true" tabindex="-1"></a>    p2_serving_tib <span class="ot">&lt;-</span> p2_serving_tib <span class="sc">|&gt;</span></span>
+<span id="cb42-111"><a href="#cb42-111" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unnest</span>(server.prob, returner.prob) <span class="sc">|&gt;</span></span>
+<span id="cb42-112"><a href="#cb42-112" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">server.prob =</span> <span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span>,</span>
+<span id="cb42-113"><a href="#cb42-113" aria-hidden="true" tabindex="-1"></a>             <span class="at">returner.prob =</span> <span class="st">`</span><span class="at">(Intercept)1</span><span class="st">`</span>)</span>
+<span id="cb42-114"><a href="#cb42-114" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-115"><a href="#cb42-115" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate probability of player 1 winning throughout the match</span></span>
+<span id="cb42-116"><a href="#cb42-116" aria-hidden="true" tabindex="-1"></a>    p2_win_prob <span class="ot">&lt;-</span> p2_serving_tib <span class="sc">|&gt;</span> <span class="fu">pmap</span>(in_match_win, <span class="at">bestof3 =</span> best_of_3,</span>
+<span id="cb42-117"><a href="#cb42-117" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">advantage =</span> advantage)</span>
+<span id="cb42-118"><a href="#cb42-118" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add probability to player 1 serving df</span></span>
+<span id="cb42-119"><a href="#cb42-119" aria-hidden="true" tabindex="-1"></a>    p2_serving_tib<span class="sc">$</span>probability <span class="ot">&lt;-</span> <span class="fu">unlist</span>(p2_win_prob)</span>
+<span id="cb42-120"><a href="#cb42-120" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-121"><a href="#cb42-121" aria-hidden="true" tabindex="-1"></a>    <span class="do">## create id for each point (should be 4000 rows for one point)</span></span>
+<span id="cb42-122"><a href="#cb42-122" aria-hidden="true" tabindex="-1"></a>    p2_serving_tib <span class="ot">&lt;-</span> p2_serving_tib <span class="sc">|&gt;</span></span>
+<span id="cb42-123"><a href="#cb42-123" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(p2_serv), <span class="at">each =</span> <span class="dv">4000</span>))</span>
+<span id="cb42-124"><a href="#cb42-124" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-125"><a href="#cb42-125" aria-hidden="true" tabindex="-1"></a>    p2_win_prob <span class="ot">&lt;-</span> p2_serving_tib <span class="sc">|&gt;</span> <span class="fu">group_by</span>(id) <span class="sc">|&gt;</span></span>
+<span id="cb42-126"><a href="#cb42-126" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">mean_prob =</span> <span class="fu">mean</span>(probability)) <span class="sc">|&gt;</span></span>
+<span id="cb42-127"><a href="#cb42-127" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pull</span>(mean_prob)</span>
+<span id="cb42-128"><a href="#cb42-128" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-129"><a href="#cb42-129" aria-hidden="true" tabindex="-1"></a>    p2_serv<span class="sc">$</span>probability <span class="ot">&lt;-</span> p2_win_prob</span>
+<span id="cb42-130"><a href="#cb42-130" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-131"><a href="#cb42-131" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb42-132"><a href="#cb42-132" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-133"><a href="#cb42-133" aria-hidden="true" tabindex="-1"></a>  <span class="co"># combine the data frames</span></span>
+<span id="cb42-134"><a href="#cb42-134" aria-hidden="true" tabindex="-1"></a>  recombined_df <span class="ot">&lt;-</span> <span class="fu">rbind</span>(p2_serv, p1_serv) <span class="sc">|&gt;</span></span>
+<span id="cb42-135"><a href="#cb42-135" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(pt_number) <span class="sc">|&gt;</span></span>
+<span id="cb42-136"><a href="#cb42-136" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">total_sets =</span> <span class="fu">as.factor</span>(P1SetsWon <span class="sc">+</span> P2SetsWon)) <span class="sc">|&gt;</span></span>
+<span id="cb42-137"><a href="#cb42-137" aria-hidden="true" tabindex="-1"></a>    <span class="co"># create probability var for just player 1 winning</span></span>
+<span id="cb42-138"><a href="#cb42-138" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">win_prob_px =</span> <span class="fu">ifelse</span>(PointServer <span class="sc">==</span> which_player_prob, probability, <span class="dv">1</span> <span class="sc">-</span> probability))</span>
+<span id="cb42-139"><a href="#cb42-139" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-140"><a href="#cb42-140" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(recombined_df)</span>
+<span id="cb42-141"><a href="#cb42-141" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

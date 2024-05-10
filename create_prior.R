@@ -39,13 +39,13 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
   ## grab the round from the match of interest
   round_of_interest <- match_of_interest |> pull(round)
   
-  # filter for relevant matches
+  ## filter for relevant matches
   prior <- matches |>
     mutate(tourney_date = lubridate::ymd(tourney_date)) |>
     
-    # incorrect filter here, show to higham
-    # filter(tourney_name ==  tourn_name |
-    # (surface == surf & tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
+    ## incorrect filter here, show to higham
+    ## filter(tourney_name ==  tourn_name |
+    ## (surface == surf & tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date)))
     filter((tourney_name == tourn_name | surface == surf) &
              (tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date))) |>
     ## add a filter to remove matches beyond the match of interest
@@ -76,17 +76,17 @@ create_prior <- function(ext = c("atp_matches_2022.csv",
       "w_svpt_l" = 1,
       "l_svpt_w" = 0,
       "l_svpt_l" = 0)) |>
-    # remove rows where server is NA (walkovers)
+    ## remove rows where server is NA (walkovers)
     filter(!is.na(server))
   
   prior_points_uncount <- uncount(prior_points, weights = as.numeric(server)) |>
     mutate(p1_server = ifelse(pt_server == 1, 1, 0),
            p2_server = ifelse(pt_server == 0, 1, 0)) |>
-    # reorganize columns
+    ## reorganize columns
     select(winner_name, loser_name, pt_winner, p1_server, p2_server, everything()) |>
     rename(player1 = winner_name, player2 = loser_name)
   
-  # Now fit the model to your point data with serving effects
+  ## Now fit the model to your point data with serving effects
   comp_mod <- comp_glm(pt_winner ~ -1, data = prior_points_uncount,
                        p1 = "player1", p2 = "player2",
                        p1_effects = ~ p1_server, p2_effects = ~ p2_server,

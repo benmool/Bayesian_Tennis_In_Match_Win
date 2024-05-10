@@ -1,40 +1,54 @@
 ---
-title: "Project_Write_Up"
-format: html
+title: "Estimating Tennis In-Match-Win Probability with Bayesian Modeling"
+format: 
+  html:
+    toc: true
 ---
 
-The most changes I made direcltly are to the "abstract"/general purpose paragraph that is first (just changing a little of the text to make it more clear what's happening for anyone that might only read this first paragraph). Other comments I left with my initials (MH) so that you can quickly command-find them. Nice work!
+```{r}
+#| label: setup
+#| include: false
+##| eval: true
+#| eval: false
 
-MH: for tense, part of it is personal preference but you should be consistent. You are already consistent in primarily using first person (we) which is good. I personally do not care much for future tense in writing so I did a command-find and cut all of the "we will...." to make them present tense instead.
+chunk_hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- chunk_hook(x, options)
+  paste0("\\linespread{0.9}\n", x, "\n\n\\linespread{2}")
+})
+```
 
-MH: Thinking about bigger picture sections, you might add an Introduction section heading that has "big picture" first paragraph, the tennis scoring stuff, and the data (each as subsections). Then, the Bayesian modeling as its own section (with some subsections), and perhaps Calculating in-match Probability as its own section and Changing priors as its own section. Then, you'll likely have a short conclusion and the appendix as you have it.
+-- TODO fix messages below --
 
+BM: I can't get the messages to shut up for this (in Prior, Data and Posterior section):
+```{r}
+#| echo: true
+#| eval: false
+# Use a bayesian generalized linear model to update our prior distribution
+mod <- stan_glm(server_won ~ 1, data = p1_serving |> slice(1:p1_niter),
+                    family = binomial,
+                    prior_intercept = normal(prior_sin_logodds, prior_sin_sd_logodds),
+                    seed = 123)
+```
 
+-- TODO revise paragraph talking about mean vs distribution (lines 526-534) --
 
-Load in libraries
+or search "TODO" and it should pop up
+
 ```{r}
 #| output: false
-#| echo: true
+#| echo: false
 #| warning: false
 #| message: false
 library(tidyverse)
-library(compr)
 library(broom)
-library(dplyr)
-library(readr)
 library(deuce)
-library(ggplot2)
 library(knitr)
 library(kableExtra)
-library(pander)
-```
+# install James Wolpe's compr package, run below in console
+# devtools::install_github(repo = "https://github.com/jameswolpe/compr")
+library(compr)
 
-Source our functions
-```{r}
-#| output: false
-#| echo: true
-#| warning: false
-#| message: false
 source("comp_prior_start.R")
 source("bayes_intro.R")
 source("wrangle_point_level_data.R")
@@ -43,55 +57,215 @@ source("get_probabilities_df.R")
 source("get_plot_df.R")
 ```
 
-**Want to work on suppressing these messages**
+## Introduction
 
-## ATP and WTA Professional Tennis: Calculating In-Match-Win Probability with Bayesian Modeling
+### ATP and WTA Professional Tennis: Calculating In-Match-Win Probability with Bayesian Modeling
 
-In this project, we explore the the in-match-win probability of professional tennis matches. Tennis' scoring format allows for huge momentum swings in a short amount of time. We are going to explore how the probabilities that tennis players win a match are calculated and update throughout the match using Bayesian modeling. To determine the probability that a player (player 1) wins a match against another player (player 2), we incorporate (1) the probability that player 1 wins a point on serve against player 2, (2) the probability that player 2 wins a point on serve against player 1, and (3) the current score of the match of interest. The prior distributions for (1) and (2) are generated from points played in matches prior to the match of interest. Both (1) and (2) are then updated throughout the match of interest as points played between the two players update their prior point-win probabilities. As case studies, we explore the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner and the 2023 Women's US Open Final between Coco Gauff and Arnya Sabalenka.
+In this project, we explore the in-match-win probability of professional tennis matches. Tennis' scoring format allows for huge momentum swings in a short amount of time. We are going to explore how the probabilities that tennis players win a match are calculated and update throughout the match using Bayesian modeling. To determine the probability that a player (player 1) wins a match against another player (player 2), we incorporate (1) the probability that player 1 wins a point on serve against player 2, (2) the probability that player 2 wins a point on serve against player 1, and (3) the current score of the match of interest. The prior distributions for (1) and (2) are generated from points played in matches prior to the match of interest. Both (1) and (2) are then updated throughout the match of interest as points played between the two players update their prior point-win probabilities. As case studies, we explore the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner and the 2023 Women's US Open Final between Coco Gauff and Arnya Sabalenka.
 
-MH: Once this is all fleshed out, it's helpful to add an outline of the paper here (in paragraph form). For example, you might say "we begin with a brief review of tennis scoring. We next discuss a general formulation of a Bayesian model, .....
+### Outline
 
-
+We begin by exploring tennis scoring to get an understanding of how a match is played. We then look at the data we are using in this project. From there we discuss Bayesian modeling, and come up with our probabilities of the players winning a point on their serves against specific opponents. We calculate the in-match-win probability and how we update our prior distributions throughout the match. We then look at the case studies of the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner, and discuss how we can change what matches we include in our prior distribution. We also explore the 2023 Women's US Open Final between Coco Gauff and Aryna Sabalenka. We conclude with a discussion of the results and potential future work. An appendix is included with the code used in this project for reference.
 
 ### Tennis Scoring
 
 The scoring format in tennis can be confusing to those that are not familiar with the sport.
+
   * The match starts with one player serving at 0-0
   * The server is the player that hits the ball first in a point
-  * The server alternates what side they serve from after every point
+  * The server alternates what direction they serve from after every point (deuce side and ad side)
   * A game is played with the server serving for the entire game
   * A game is won by the first player to win 4 points, wining by a margin of 2 or more points
   * Sets are played first to 6 games, wining by a margin of 2 or more games
   * If the score reaches 6-6 in a set, a tiebreak is played
   * A tiebreak is won by the first player to win 7 points, wining by a margin of 2 or more points
   * A match is played to the best of 3 or 5 sets based on the tournament format
+  
+A little more tennis terminology are the words break and hold.
 
-A graphic is attached below to help, and a more detailed write-up can be found on the *doubletake* website [here](https://www.shopdoubletake.com/blogs/well-played/tennis-scoring-101).
+  * Break: when the player returning wins the game
+  * Hold: when the player serving wins the game
+
+A graphic is attached below to help, and a more detailed write-up can be found on the website *doubletake* [here](https://www.shopdoubletake.com/blogs/well-played/tennis-scoring-101).
 
 ![](tennis_scoring.jpeg)
 
-### Bayesian Modeling
+### Data
 
-In Bayesian modeling, we start with some existing beliefs about a parameter, which we call our prior distribution. We then observe new data come in and update our beliefs about the parameter based on the new data, which we call our posterior distribution. 
+The data used in this project is from the ATP and WTA professional tennis tours, and is from Jeff Sackman's tennis data on  Github. There is [point-level data](https://github.com/JeffSackmann/tennis_slam_pointbypoint) on the ATP and WTA main-draw singles grand slam tournaments from 2011-present. There is also [match-level data](https://github.com/JeffSackmann/tennis_atp) for ATP matches and [match-level data](https://github.com/JeffSackmann/tennis_wta) for WTA matches. Access to the data is needed to ensure correct spelling of player names (especially nicknames, ie "Rafa Nadal" vs "Rafael Nadal") and tournament names, the correct date ranges, file paths, and match IDs for specific matches of interest. Checking these details is best done on the matches data frames, and if finding the information on the Github site is problematic, the data can be read in using the `read_matches()` function, which works for both ATP and WTA data.
+
+We can explore what the data containing all of the matches looks like. Here we look at one match from the first round of the 2022 Men's US Open. This is one row of the data frame but is shown over multiple rows here for readability.
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+# read in match data
+mens_atp_2022 <- read_matches("atp_matches_2022.csv") |>
+  select(winner_name, loser_name, everything())
+# select first match from US Open
+one_match <- mens_atp_2022 |> filter(tourney_id == "2022-560") |> slice(1) 
+# display first 8 columns
+one_match |> select(1:8) |>
+  kable(format = "html", longtable = TRUE) |>
+  kable_styling(full_width = FALSE)
+# display next 8 columns
+one_match |> select(9:16) |>
+  kable(format = "html", longtable = TRUE) |>
+  kable_styling(full_width = FALSE)
+# display next 8 columns
+one_match |> select(17:24) |>
+  kable(format = "html", longtable = TRUE) |>
+  kable_styling(full_width = FALSE)
+# display next 8 columns
+one_match |> select(25:32) |>
+  kable(format = "html", longtable = TRUE) |>
+  kable_styling(full_width = FALSE)
+# display next 9 columns
+one_match |> select(33:41) |>
+  kable(format = "html", longtable = TRUE) |>
+  kable_styling(full_width = FALSE)
+# display last 8 columns
+one_match |> select(42:49) |>
+  kable(format = "html", longtable = TRUE) |>
+  kable_styling(full_width = FALSE)
+```
+
+We can explore some of the point level data to get a better understanding of what we are working with. Below are some selected rows from the point-level data once we have cleaned it and tidied it for what we need. This data is taken from the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner.
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+# returns list of two data frames
+sin_alc_paired <- wrangle_point_level(ext = "2022-usopen-points.csv",
+                               ID = "2022-usopen-1503")
+# first data frame corresponds to player1 (Sinner)
+sin_serving <- sin_alc_paired[[1]]
+# second data frame corresponds to player2 (Alcaraz)
+alc_serving <- sin_alc_paired[[2]]
+
+combined_sin_alc_points <- bind_rows(sin_serving, alc_serving) |> arrange(pt_number) |>
+  mutate(P1SetsWon = cumsum(SetWinner == 1),
+         P2Setswon = cumsum(SetWinner == 2)) |>
+  select(pt_number, PointServer, PointWinner, everything(), -P1PointsWon, -P2PointsWon, -SetWinner)
+```
+
+Here are the first 10 points from the start of the match, where we see Alcaraz break Sinner's serve in the first game of the match:
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+combined_sin_alc_points |>
+  mutate(P1Score = ifelse(P1Score == 4, "AD", P1Score),
+         P2Score = ifelse(P2Score == 4, "AD", P2Score)) |>
+  slice(1:10) |>
+  kable() |>
+  kable_styling(full_width = FALSE,
+                font_size = 11)
+```
+
+Here are some points at the end of the second set, as Sinner wins the second set tiebreak 9-7:
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+combined_sin_alc_points |> slice(143:162) |>
+  kable() |>
+  kable_styling(full_width = TRUE,
+                font_size = 11)
+```
+
+## Bayesian Modeling
+
+### Brief Overview
+
+In Bayesian modeling, we start with some existing beliefs about a parameter, which we call our prior distribution. We then observe new data come in and update our beliefs about the parameter based on the new data, which we call our posterior distribution.
 
 In this project, our parameters of interest are the probabilities that player1 and player2 win a point on their serve. We calculate these probabilities using previous matches that have been played. As the match progresses, we update our beliefs about these probabilities of winning a point on serve, and at a specific state of the match, we can calculate the probability that either of the players wins the match. Choosing what matches we include in our prior distributions is important, as we want to include matches that are relevant to the match of interest.
 
-### Data
+Throughout this paper, we use the 2022 Men's US Open Quarterfinal match between Carlos Alcaraz and Jannik Sinner as an example match to make discussing the Bayesian model more straightforward. So, in the context of this match, our parameters of interest are the probabilities that Alcaraz wins a point on his serve against Sinner, and the probability that Sinner wins a point on his serve against Alcaraz. After each point of the match is played, we update these probabilities.
 
-The data used in this project is from the ATP and WTA professional tennis tours, and is from Jeff Sackman's tennis data on  Github. There is [point-level data](https://github.com/JeffSackmann/tennis_slam_pointbypoint) on the ATP and WTA main-draw singles grand slam tournaments from 2011-present. There is also [match-level data](https://github.com/JeffSackmann/tennis_atp) for ATP matches and [match-level data](https://github.com/JeffSackmann/tennis_wta) for WTA matches. Access to the data is needed to ensure correct spelling of player names and tournament names, the formatting of date ranges, the correct file paths, and match IDs for specific matches of interest.
+### Matches for Prior Distributions
 
-MH: not sure what you mean here with this last sentence. Why does access to data needed to ensure the correct spelling of a player?
+We start with some prior beliefs about the probabilities that Alcaraz and Sinner win a point on serve. We use the data from previous matches to calculate these prior distributions. These matches we choose to include in our prior distributions are important, as we want to include matches that are relevant to the match of interest. The matches we include are matches that Alcaraz and Sinner have played in, as well as matches that other players have played in. This is because we want to include matches that have some connection between Alcaraz and Sinner, even if they have not played against each other.
 
+```{r}
+#| warning: false
+#| echo: false
+library(tidygraph)
+matches2022 <- purrr::map("atp_matches_2022.csv", read_matches) |>
+  bind_rows() |>
+  select(winner_name, loser_name)
 
-### Prior Distributions
+matches2022 <- purrr::map("atp_matches_2022.csv", read_matches) |>
+  bind_rows() |>
+  filter(winner_seed <= 2 & best_of == 5) |>
+  select(winner_name, loser_name)
 
-We start with some prior beliefs about the probabilities that player1 and player2 win a point on serve. We use the data from previous matches to calculate these prior distributions. We then update these prior distributions as the match progresses.
+set.seed(12)
+random_sample <- matches2022 |> sample_n(20)
 
-MH: the model also incorporates matches between players who have not played against the two players of interest.
+player_names <- tibble(player1 = random_sample$winner_name,
+                       player2 = random_sample$loser_name)
 
-MH: you transition from "player 1" and "player 2" to alcaraz and sinner here. It might be nice to actually set up alcaraz and sinner back in the bayesian modeling section (just saying something like "throughout this paper, we use the 2022 U.S. Quarterfinal match between Carlos Alcaraz and Jannik Sinner as an example match to make discussing the Bayesian model more straightforward).
+player_names <- tibble(
+  player1 = c("Felix Auger Aliassime", "Novak Djokovic", "Daniil Medvedev", "Carlos Alcaraz", "Jannik Sinner", 
+              "Rafael Nadal", "Casper Ruud", "Holger Rune", "Andrey Rublev", "Tommy Paul", "Sebastian Korda", 
+              "Taylor Fritz", "Felix Auger Aliassime", "Felix Auger Aliassime", "Daniil Medvedev", "Taylor Fritz"),
+  player2 = c("Novak Djokovic", "Daniil Medvedev", "Carlos Alcaraz", "Novak Djokovic", "Rafael Nadal", "Casper Ruud", 
+              "Holger Rune", "Andrey Rublev", "Tommy Paul", "Sebastian Korda", "Taylor Fritz", 
+              "Felix Auger Aliassime", "Felix Auger Aliassime", "Rafael Nadal", "Jannik Sinner", "Casper Ruud")
+)
 
-When forming our prior beliefs, we are using a paired competition model. This means that we are using the data from the matches that player1 and player2 have played in, as well as other players that they have played against. For this to work, we need there to be some connection between player1 and player2 using matches they and other opponents have played (ie player1 has played against playera, who played against playerb, who played against player2).
+nodes_tennis <- player_names |> pivot_longer(c(player1, player2),
+                             names_to = "player_num",
+                             values_to = "player") |>
+  distinct(player) |>
+  rowid_to_column("id") |>
+  rename(label = player)
+
+player_sum <- player_names |> 
+  mutate(p1 = if_else(player1 > player2,
+                      true = player2,
+                      false = player1),
+         p2 = if_else(player1 > player2,
+                      true = player1,
+                      false = player2)) |>
+  select(-player1, -player2) |>
+  group_by(p1, p2) |>
+  summarise(n = n())
+
+# create edges to match with ids
+edges_tennis <- left_join(player_sum, nodes_tennis, 
+                   by = join_by(p1 == label)) |>
+  rename(from = "id") |>
+  left_join(nodes_tennis, by = join_by(p2 == label)) |>
+  rename(to = "id") |>
+  ungroup() |>
+  dplyr::select(to, from, n)
+# create network obj
+network_obj_tennis <- tbl_graph(nodes = nodes_tennis, edges = edges_tennis, directed = FALSE)
+
+library(ggraph)
+ggraph(network_obj_tennis |> mutate(centrality = centrality_authority()),
+                            layout = "stress") +
+  geom_edge_link(aes(width = n), alpha = 0.7, show.legend = FALSE) +
+  geom_node_point(aes(size = centrality)) +
+  scale_edge_width(range = c(0.5, 3)) +
+  geom_node_text(aes(label = label), repel = TRUE, size = 7)  +
+  scale_colour_viridis_d() +
+  guides(size = "none") +
+  labs(title = "Network Diagram of Prior Distribution Matches")
+```
+
+This network diagram is an example of a group of matches that can be used to form a prior distribution. Note that this is not the actual prior distribution that we use later, but is a made-up prior distribution to help visualize.
+
+In the diagram, the nodes represent players, and the edges represent matches that have been played. We can see that Jannik Sinner and Carlos Alcaraz have not played a match against each other out of the matches included here. We are able to calculate their probabilities of winning a point on serve against each other by using the data from the matches that they have played in, as well as the matches that other players have played in, because there is a connection between them.
+
+For example, we would not be able to use just the early rounds of the 2022 US Open to form a prior distribution for the quarterfinal matchup between Alcaraz and Sinner. This is because there is no connection between the two players in the early rounds of the tournament, as nobody in Alcaraz's section of the draw has played anyone in Sinner's section of the draw. We would need to include matches that have a connection between Alcaraz and Sinner, even if they have not played against each other.
+
+### Paired Competition Model
+
+When forming our prior beliefs, we are using a paired competition model. This means that we are using data from the matches that Alcaraz and Sinner have played in, as well as other players that they have played against. For this to work, we need there to be some connection between Alcaraz and Sinner using matches they and other opponents have played (ie Sinner has played against playera, who played against playerb, who played against Alcaraz).
 
 We define $Y_{ijk}$ to be a Bernoulli random variable equal to either:
   * $1$ if player $i$ wins the $k^{th}$ point against player $j$
@@ -99,7 +273,7 @@ We define $Y_{ijk}$ to be a Bernoulli random variable equal to either:
   
 Then $\text{E}(Y_{ijk}) \equiv \pi_{ijk}$, the probability that Player $i$ wins the $k^{th}$ point against Player $j$.
 
-So we have:
+So for calculating this in regards to Alcaraz and Sinner and all matches we include in the prior we have:
 $$\text{logit}(\pi_{ijk}) = \beta_{alcaraz}X_{alcaraz} + \beta_{sinner}X_{sinner} + \ldots + \beta_{ruud}X_{ruud}$$
 Where $X_{alcaraz}$ is equal to: 
     * $1$ if Alcaraz is player $i$ on the $k^{th}$ point
@@ -155,11 +329,33 @@ And as another example, the log-odds of Carlos Alcaraz (player $i$) winning a po
 
 We use the data from the leadup tournaments to the 2022 US Open (hard court tournaments) and the rounds of the 2022 US Open before the quarterfinals to calculate these coefficients in the paired competition model. We can then calculate the probability that Alcaraz wins a point while serving against Sinner, and the probability that Sinner wins a point while serving against Alcaraz. With these estimated probabilities and standard deviations, we then create distributions for the prior probabilities of winning a point on serve for Alcaraz and Sinner.
 
-**NOTE** Is it good idea to put in network diagram? The one I have that is clean is not applicable to this specific data, but could be nice to visualize? Can have diagram and some text explaining it...
+### Calculating the Prior Distributions of the Probabilities that Alcaraz and Sinner Win a Point on Serve
 
-MH: I think you can throw it in here. Even though it's not accurate, it is still a nice example. 
+Load in libraries and source in functions:
+```{r}
+#| output: false
+#| warning: false
+#| message: false
+library(tidyverse)
+library(broom)
+library(knitr)
+library(kableExtra)
+# install James Wolpe's compr package, run below in console
+# devtools::install_github(repo = "https://github.com/jameswolpe/compr")
+library(compr)
+# install skoval's deuce package, run below in console
+# devtools::install_github("skoval/deuce")
+library(deuce)
 
-So, to calculate the prior distributions of the probabilities that Alcaraz and Sinner win a point on serve, we use our `create_prior` function. Note that this function's outputs are on the log-odds scale, and contains the mean log-odds values for player1 and the standard deviations.
+source("comp_prior_start.R")
+source("bayes_intro.R")
+source("wrangle_point_level_data.R")
+source("create_prior.R")
+source("get_probabilities_df.R")
+source("get_plot_df.R")
+```
+
+To calculate the prior distributions of the probabilities that Alcaraz and Sinner win a point on serve, we use our `create_prior()` function. Note that this function's outputs are on the log-odds scale, and contains the mean log-odds values and standard deviations, and are also all in reference to `player1`.
 ```{r}
 #| cache: true
 #| echo: true
@@ -174,7 +370,7 @@ aug_mod_sin_small_prior <- create_prior(ext = c("atp_matches_2022.csv"),
 aug_mod_sin_small_prior |> kable()
 ```
 
-So from the output, we see that Sinner has a mean value of winning a point while serving against Alcaraz of 0.2434863 with a standard error of 0.1193404, and both of these are on the log odds scale. This is indicated by p1_server being equal to 1 for this row. We can also see that Sinner has a mean value of winning a point while returning against Alcaraz of -0.5017383 with a standard error of 0.1196950, and again both on the log odds scale. To get the log odds of Alcaraz winning a point while serving against Sinner, we can negate the value of Sinner winning a point while returning against Alcaraz. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function expit(). The logistic function transforms the log-odds to probabilities, ensuring that the probabilities fall within the range [0, 1].
+From the output, we see that Sinner has a mean value of winning a point while serving against Alcaraz of `0.2434863` with a standard error of `0.1193404`, and both of these are on the log-odds scale. This is indicated by `p1_server` being equal to `1` for this row. We can also see that Sinner has a mean value of winning a point while returning against Alcaraz of `-0.5017383` with a standard error of `0.1196950`, and again both on the log-odds scale. To get the log-odds of Alcaraz winning a point while serving against Sinner, we can negate the value of Sinner winning a point while returning against Alcaraz. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function `expit()`. The logistic function transforms the log-odds to probabilities, ensuring that the probabilities fall within the range [0, 1].
 ```{r}
 # probability Sinner wins a point on serve
 expit(0.2434863) # 0.5605726
@@ -189,7 +385,7 @@ expit(-0.2434863) # 0.4394274
 
 From this prior we have created, we are estimating Sinner to win around 56.06% of points played on his serve against Alcaraz, and for Alcaraz to win around 62.29% of points played on his serve against Sinner.
 
-We can then create distributions to visualize what these probabilities look like. We'll start with our log odds and randomly generate 200,000 random samples from a normal distribution with mean log-odds from our prior and standard deviations from our prior.
+We can then create distributions to visualize what these probabilities look like. We'll start with our log-odds and randomly generate 200,000 random samples from a normal distribution with mean log-odds from our prior and standard deviations from our prior.
 ```{r}
 #| cache: true
 # Save sinner log-odds and sd from prior as variables
@@ -223,7 +419,7 @@ ggplot(data = both_priors_df, aes(x = prob)) +
        x = "Probability of Winning a Point (on serve)",
        y = "Density",
        caption = "Prior includes matches from leadup tournaments to 2022 USO and 2022 USO itself") +
-  theme_bw(base_size = 20)
+  theme_bw(base_size = 10)
 ```
 
 From our prior distributions, we can see that Sinner's probability of winning a point on serve against Alcaraz is around 0.57, and Alcaraz’s probability of winning a point on serve against Sinner is around 0.62. These are our starting probability distributions for the match. Based on their prior matches we have included, we think that Alcaraz has a higher probability of winning a point on his serve than Sinner does, but, there is some overlap in their prior distributions. As each point is played, we update these probability distributions.
@@ -232,8 +428,21 @@ From our prior distributions, we can see that Sinner's probability of winning a 
 
 Now with our prior distributions for the probabilities that the players win a point while serving, we can observe how these probabilities update throughout the match by looking at a specific state of the match.
 
-But first, we need to load in our data for the match between Alcaraz and Sinner. To do this, we use our function `wrangle_point_level()`. This function returns a list of two data frames, and the order is determined by which player is listed as Player1 and Player2 for the match, and this can be found on [Jeff Sackman's Github](https://github.com/JeffSackmann). Look at either `tennis_atp` repo or `tennis_wta` repo, find the csv with the correct match year, and from this find the correct match-ID to use in the function, as well as determine which player is Player1 and Player2.
+But first, we need to load in our data for the match between Alcaraz and Sinner. To do this, we use our function `wrangle_point_level()`. This function returns a list of two data frames, and the order is determined by which player is listed as Player1 and Player2 for the match, and this can be found on [Jeff Sackman's Github](https://github.com/JeffSackmann). Look at either the `tennis_atp` repo or the `tennis_wta` repo, find the csv with the correct match year for the match of interest, and from this find the correct match-ID to use in the function. Also make sure to determine which player is Player1 and Player2. If the Github repo code is not easy to read, you can also load in the csv file with the `read_matches()` function, as noted earlier, and find the correct match-ID from there:
 ```{r}
+#| cache: true
+#| echo: true
+#| message: false
+#| warning: false
+atp_matches_2022 <- read_matches("atp_matches_2022.csv")
+```
+
+Now that we have our match-ID, we can load in the data for the match between Alcaraz and Sinner:
+```{r}
+#| cache: true
+#| echo: true
+#| message: false
+#| warning: false
 # returns list of two data frames
 sin_alc_paired <- wrangle_point_level(ext = "2022-usopen-points.csv",
                                ID = "2022-usopen-1503")
@@ -245,6 +454,7 @@ alc_serving <- sin_alc_paired[[2]]
 
 We can look at a specific state of the match now that we have our data. For our Alcaraz and Sinner example, we also have their probabilities of winning a point on serve at the very start of the match. We can look at Sinner when he is serving at 40-15, 1-1 in the 3rd set (a little less than halfway through the match) and see how his probability of winning a point on serve has changed.
 ```{r}
+#| echo: true
 p1_serving_df <- sin_serving |> slice(1:150)
 
 p1_serving_df |>
@@ -255,9 +465,12 @@ p1_serving_df |>
 ```
 At this state of the match, Sinner has played 150 points on his serve and won 89 of them, which is right around 0.6. We'd expect his updated distribution to shift towards 0.6, as his original probability was around 0.5606.
 
+Now let's plot Sinner's prior distribution with his updated prior distribution at this specific state of the match.
 ```{r}
-#| output: false
 #| cache: true
+#| echo: true
+#| message: false
+#| warning: false
 # get the number of rows in the data frame
 p1_niter <- p1_serving_df |> nrow()
 # create a storage vector for the probabilities
@@ -291,25 +504,39 @@ ggplot(data = plot_df, aes(x = prob)) +
        y = "Density",
        caption = "Sinner: 89/150 points won on serve") +
   coord_cartesian(ylim = c(0, 17)) +
-  theme_bw(base_size = 22)
+  theme_bw(base_size = 10)
 ```
 
-We can see that Sinner's probability distribution of winning a point on serve when he is serving at 40-15, 1-1 in the 3rd set has shifted from the prior distribution, closer to 0.6.
+We can see that Sinner's probability distribution of winning a point on serve when he is serving at 40-15, 1-1 in the 3rd set has shifted. As points are being played we are getting additional data, and that data is updating the distribution bit by bit. At this point of the match, we think that Sinner has a slightly higher probability of winning a point on serve than at the start of the match. With Sinner winnning 89 out of 150 points on serve at this point in the match, it makes sense that his updated distribution has shifted closer to 0.6.
 
-## Caclulating In-Match-Win Probability
+### Moving Forward
+
+Now that we have explored how to create the probabilities of winning a point on serve and seeing how they update throughout the match, we can use these probabilities to calculate the probability of winning the match.
+
+## Caclulating In-Match-Win Probability (Alcaraz vs Sinner, Case Study 1)
 
 With the probabilities of both players winning a point on their serve, we can calculate the probability of either player winning the entire match. We can do this by simulating the match point by point, and updating the probabilities of the players winning a point on serve as each successive point is played. For a current state of the match, we have the updated probabilities of each player winning a point on serve, and the score at that state of the match, and using these we can calculate the overall probability of winning the match.
 
-For our example, we explore the probability that Alcaraz wins the match.
+For our first case study, we continue to use our example that we have talked through to set up key aspects of this project. We look at the 2022 US Open Quarterfinal match between Jannik Sinner and Carlos Alcaraz, where Alcaraz defeated Sinner 6-3, 6-7(7), 6-7(0), 7-5, 6-3 in 5 sets.
 
-First, we need to calculate the probabilities of Alcaraz and Sinner winning a point on serve after each successive point is played. To do this, we use our `get_probabilities_df()` function. This function takes in the data frames of the players' serving points, the players' names, the players' original probabilities of winning a point on serve, and the players' original standard errors. Before, we looked at Sinner's updated probability distribution of winning a point on serve at a specific state of the match. Now, we loop through every single point of the match and obtain updated probabilities of the two players winning a point on serve after each successive point. It is worth noting that as Alcaraz serves multiple points in a row, Sinner's probability of winning a point on serve does not change as there is no new data we are observing that would update his probability. Our output is a dataframe that contains the probabilities of the two players winning a point on serve which is updated after each successive point.
+At the time, this match was highly anticipated to be a close match between two young, emerging stars in the tennis world. Sinner, an Italian player, was seeded 11th in the tournament and was known for his powerful groundstrokes and aggressive playing style. Alcaraz, a Spanish player, was seeded 3rd in the tournament but had been making waves in the tennis world with his athleticism and shot-making ability.
 
-**Make note here of how we have both the mean probabilities and also have the distribution centers from sampling saved in this df, can then later choose which to use**
+With Alcaraz being the winner, we are exploring the probability that Alcaraz wins the match.
 
+First, we need to calculate the updated probabilities of Alcaraz and Sinner winning a point on serve after each successive point is played. To do this, we use our `get_probabilities_df()` function. This function takes in the data frames of the players' serving points, the players' names, the players' original probabilities of winning a point on serve, and the players' original standard errors. Before, we looked at Sinner's updated probability distribution of winning a point on serve at a specific state of the match. Now, we loop through every single point of the match and obtain updated probabilities of the two players winning a point on serve after each successive point. It is worth noting that as Alcaraz serves multiple points in a row, Sinner's probability of winning a point on serve does not change as there is no new data we are observing that would update his probability. Our output is a dataframe that contains the probabilities of the two players winning a point on serve which is updated after each successive point.
+
+-- TODO make sure below makes sense --
+
+Note that our original probabilities of winning a point on serve at the start of the match came from us taking the mean of the log-odds serve posterior distributions of each player winning a point on serve. We then converted these log-odds to talk about them in terms of probabilities.
+
+An alternative approach to calculating the probabilities of winning a point on serve is to take samples from the serve posterior distributions of the log-odds of winning a point on serve for each player. As we sample from these distributions, we convert each log-odds sample to a probability of winning a point on serve. We then average all of these probabilities to get a final probability of winning a point on serve.
+
+So in our `get_probabilities_df()` function, we save both the mean log-odds and the distribution centers from sampling in the dataframe. This allows us to choose which probabilities to use later on, when we use another function to calculate the overall probability of winning the match.
 ```{r}
 #| output: false
 #| message: false
 #| cache: true
+#| echo: true
 combined_prob_sin_alc_sp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
@@ -320,7 +547,7 @@ combined_prob_sin_alc_sp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_original_se = 0.1196950)
 ```
 
-We can now use the probabilities of the two players winning a point on serve to calculate the overall probability of the players winning the match. We simulate the match point by point, updating the probabilities of the players winning a point on serve as each point is played, and for each specific state of the match and probabilities of the players winning a point on serve, we can calculate the overall probability of a player to win the overall match. We use the `get_plot_df()` function to do this.
+We can now use the probabilities of the two players winning a point on serve to calculate the overall probability of the players winning the match. We simulate the match point by point, updating the probabilities of the players winning a point on serve as each point is played, and for each specific state of the match and probabilities of the players winning a point on serve, we can calculate the overall probability of a player to win the overall match. We use the `get_plot_df()` function to do this. As noted before the chunk above, we have the option to use the mean probabilities or the distribution centers from sampling to calculate the overall probability of winning the match. This is the `type` parameter in the function. We set this parameter to `"mean"` or `"distribution"`.
 ```{r}
 #| output: false
 #| cache: true
@@ -335,7 +562,7 @@ plot_sin_alc_small_prior <- get_plot_df(combined_df = combined_prob_sin_alc_sp_d
   mutate(set_number = as.factor(set_number))
 ```
 
-We can choose how many sets we want to display on our graph.
+We can choose how many sets we want to display on our graph, but here we save colors for up to 5 sets.
 ```{r}
 # create fills to color sets by
 fills <- c("#F57A5C", "#F5C25C", "#94E25B", "#69CEE0", "#A875CE")
@@ -366,14 +593,20 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1]) +
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 10)
 ```
 
-Add comments on the graph here, dips and peaks, etc... maybe talk about updated probabilities of winning a point on serve now too after the first set?
+We see Alcaraz start the match with a high probability of winning the match. This makes sense, as Alcaraz's probability of winning a point on serve (0.6228678) is much higher than Sinner's probability of winning a point on serve (0.5605726).
 
-MH: Yes, I think that's all good stuff to add. 
+Some notable moments in the first set are:
 
-We can choose to include all of the sets to plot the entire match:
+  * Alcaraz breaks Sinner's serve in the first game of the match to go up 1-0.
+  * Sinner breaks back in the fourth game of the match to even the set at 2-2, and holds after a long game with many deuce points to go up 3-2.
+  * Alcaraz then wins the next 4 games in a row to take the first set 6-3, so it follows that his probability of winning the match has increased since the start of the match.
+  * Alcaraz's updated probability of winning a point on serve at the end of the set is 0.624
+  * Sinner's updated probability of winning a point on serve at the end of the set is 0.549
+
+We can include all of the sets to plot the entire match:
 ```{r}
 # not necessary here since we are plotting all sets, but included anyway
 plot_five_sets_sin_alc <- plot_sin_alc_small_prior |>
@@ -398,18 +631,68 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:5]) +
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 10)
 ```
 
-Add comments on the graph here, dips and peaks, etc....
+Second set:
 
-## Changing Prior Distributions
+  * Sinner breaks early in the set to go up 2-1
+  * Sinner maintains his break of serve and is serving for the set up 5-3
+  * Alcaraz breaks back to even the set at 5-5
+  * Sinner is serving at 5-6, 0-40, and Alcaraz's probability of winning the match is very high
+  * Sinner saves multiple set points and forces a tiebreaker
+  * Both players save set points in the tiebreaker, but Sinner pulls away to win it 9-7
+  * Alcaraz's updated probability of winning a point on serve at the end of the set is 0.635
+  * Sinner's updated probability of winning a point on serve at the end of the set is 0.563
+  
+Third set:
+
+  * The set starts with the players trading holds
+  * Alcaraz breaks serve to go up 3-2
+  * Alcaraz is serving at 4-3 and Sinner breaks back for 4-4
+  * At 5-5, Alcaraz breaks Sinner's serve to go up 6-5 serving for the set
+  * Sinner breaks Alcaraz's serve to force a tiebreaker
+  * Sinner runs away with the tiebreaker and the set, winning all 7 points in a row (7-0)
+  * Alcaraz's updated probability of winning a point on serve at the end of the set is 0.620
+  * Sinner's updated probability of winning a point on serve at the end of the set is 0.570
+  
+Fourth set:
+
+  * Sinner breaks Alcaraz's serve in the first game of the set, 1-0
+  * With Sinner servng at 3-2, Alcaraz breaks back to even the set at 3-3
+  * Sinner breaks right back to go up 4-3
+  * Sinner has a match point serving at 5-4, Ad-In, but Alcaraz saves it, and breaks for 5-5
+  * Alcaraz holds for 6-5, and breaks Sinner to win the set 7-5
+  * Alcaraz's updated probability of winning a point on serve at the end of the set is 0.617
+  * Sinner's updated probability of winning a point on serve at the end of the set is 0.563
+  
+Fifth set:
+
+  * The players trade holds early
+  * Sinner breaks Alcaraz's serve to go up 3-2
+  * Alcaraz breaks right back and then holds to go up 4-3
+  * Alcaraz breaks again to go up 5-3
+  * Alcaraz holds to win the set 6-3, and win the overall match
+  * Alcaraz's updated probability of winning a point on serve at the end of match set is 0.620
+  * Sinner's updated probability of winning a point on serve at the end of the match is 0.557
+
+Observing the dips and peaks in the probability of winning the match as serves were broken and held, and sets won shows how quickly momentum can shift in a tennis match. The probability of winning the match is not always a smooth curve, and can change rapidly with the outcome of a few points, especially in a tight-fought match like this one.
+
+## Changing Prior Distributions (Alcaraz vs Sinner)
 
 We can change what matches we include in our prior distributions and see how this affects our probabilities of each player winning a point on serve at the start of the match. With these different probabilities of winning a point on serve, we can see how the overall probability of winning the match changes.
 
-Let's explore what happens if we change the prior distribution to a larger prior. Let's include all hard court matches over the entire last year before the 2022 US Open. So, now all our matches include the 2021 US Open and all hard court matches played between then and the quarterfinal round of the 2022 US Open. We  see how this changes the probabilities of Alcaraz and Sinner winning points on serve, and see how this changes the overall probability of Alcaraz winning the match.
+For our example above, we explored the probability of Alcaraz winning the match against Sinner using matches from the hard court lead-up tournaments to the 2022 US Open and the 2022 US Open itself to form our prior distribution. Now, we compare this to two more possible prior distributions.
 
-We again use our `create_prior` function to calculate these values on the log-odds scale.
+We can look at a prior generated that includes all hard court matches from the 2021 US Open to the quarterfinal round of the 2022 US Open. This is our "Large Prior" distribution that includes more matches than our original "Small Prior" distribution. Due to the larger sample size of matches, we expect to see smaller changes in the updates of the probabilities of winning a point on serve throughout the match.
+
+We can also explore what happens if we fix the probabilities of Sinner and Alcaraz winning a point on serve at a specific value, which we set at 0.68 for both players (around tour average). We observe what happens when we fix this value for the match.
+
+The different priors we choose change the probabilities of winning a point on serve at the start of the match and thus alter the overall probability of Alcaraz winning the match. We can see this in the plot below.
+
+But first, we must generate our new priors and calculate the probabilities of winning a point on serve at the start of the match and update them accordingly. We start with our "Large Prior" distribution and then move on to the fixed probabilities.
+
+We again use our `create_prior()` function to calculate these values on the log-odds scale.
 ```{r}
 #| output: false
 #| cache: true
@@ -425,7 +708,8 @@ aug_mod_sin_large_prior <- create_prior(ext = c("atp_matches_2021.csv",
 aug_mod_sin_large_prior |> kable()
 ```
 
-So from the output, we see that Sinner has a mean value of winning a point while serving against Alcaraz of 0.4288085 with a standard error of _______, and both of these are on the log odds scale. We can also see that Sinner has a mean value of winning a point while returning against Alcaraz of -0.4795682 with a standard error of ______, and again both on the log odds scale. To get the log odds of Alcaraz winning a point while serving against Sinner, we can negate the value of Sinner winning a point while returning against Alcaraz. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function expit(). The logistic function transforms the log-odds to probabilities, ensuring that the probabilities fall within the range [0, 1].
+From the output, we see that Sinner has a mean value of winning a point while serving against Alcaraz of 0.4288085 with a standard error of 0.0491917, and both of these are on the log odds scale. We can also see that Sinner has a mean value of winning a point while returning against Alcaraz of -0.4795682 with a standard error of 0.0497102, and again both on the log odds scale. To get the log odds of Alcaraz winning a point while serving against Sinner, we can negate the value of Sinner winning a point while returning against Alcaraz. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function expit(). The logistic function transforms the log-odds to probabilities, ensuring that the probabilities fall within the range [0, 1]. Note that the standard error is also smaller than the "Small Prior" distribution, as we have more matches included in our "Large Prior" distribution.
+
 ```{r}
 # probability Sinner wins a point on serve
 expit(0.4288085) # 0.6055891
@@ -437,14 +721,14 @@ expit(0.4795682) # 0.6176459
 # probability Alcaraz wins a point on return
 expit(-0.4288085) # 0.3944109
 ```
+Compared to our "Small Prior" distribution, we see that the probabilities of Sinner and Alcaraz winning a point on serve have changed. From our "Small Prior" distribution, Sinner had a probability of 0.5605726 of winning a point on serve, and Alcaraz had a probability of 0.6228678 of winning a point on serve. We have seen an increase in Sinner's probability, and a decrease in Alcaraz's probability from that prior to this prior.
 
 We can then calculate the probabilities of them winning a point on their serve throughout the entire match, updating after each point using our `get_probabilities_df()` function.
-
-**NOTE** still running code through and want to double check numbers input into this function below
 ```{r}
 #| output: false
 #| cache: true
 #| message: false
+#| warning: false
 combined_prob_alc_sin_lp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
@@ -457,6 +741,10 @@ combined_prob_alc_sin_lp_df <- get_probabilities_df(p1_serving_df = sin_serving,
 
 Using the probabilities of the two players winning a point on serve and the current score of the match as we feed it in, we can calculate the overall probability of winning the match.
 ```{r}
+#| output: false
+#| cache: true
+#| message: false
+#| warning: false
 plot_sin_alc_large_prior <- get_plot_df(combined_df = combined_prob_alc_sin_lp_df,
                                         which_player_prob = 2,
                                         best_of_3 = FALSE,
@@ -468,33 +756,12 @@ plot_sin_alc_large_prior <- get_plot_df(combined_df = combined_prob_alc_sin_lp_d
   mutate(set_number = as.factor(set_number))
 ```
 
-
-**NOTE** Still making more revisions here and tidying up.
-
-For our example, we explore the effect of changing the prior distributions on the probability of Alcaraz winning the match. We have our original prior distribution we used, labeled "Small Prior", and it included the lead-up tournaments to the 2022 US Open and the 2022 US Open itself. We compare this to a "Large Prior" distribution that includes all hard court matches from the 2021 US Open to the 2022 US Open itself. We can also fix the probabilities of Sinner and Alcaraz winning a point on serve at a specific value, such as 0.68 (around tour average).
-
+Now we have our overall probability of Alcaraz winning the match that updates after each point is played. We can plot this, but first let's work through the code to generate the probability of Alcaraz winning the match when we fix both players' probabilities of winning a point on serve at 0.68. A lot of the code here is tidied and packed away in functions that we have used, but we have to do it manually here to input the 0.68 values for both players.
 ```{r}
 #| output: false
 #| cache: true
-combined_prob_alc_sin_lp_df <- get_probabilities_df(p1_serving_df = sin_serving,
-                                 p2_serving_df = alc_serving,
-                                 p1 = "Jannik Sinner",
-                                 p2 = "Carlos Alcaraz",
-                                 p1_original_prob = 0.4288085,
-                                 p1_original_se = 0.04919170,
-                                 p2_original_prob = 0.4795682,
-                                 p2_original_se = 0.04971023)
-
-plot_sin_alc_large_prior <- get_plot_df(combined_df = combined_prob_alc_sin_lp_df,
-                                        which_player_prob = 2,
-                                        best_of_3 = FALSE,
-                                        advantage = FALSE,
-                                        type = "distribution") |>
-  mutate(set_number = as.factor(as.numeric(total_sets))) |>
-  # fix last row in data set where set_number is 6, should be a 5
-  mutate(set_number = ifelse(pt_number == max(pt_number), '5', set_number)) |>
-  mutate(set_number = as.factor(set_number))
-
+#| echo: true
+#| warning: false
 sin_serving_fp <- sin_serving |> 
   mutate(player1 = "Jannik Sinner",
          player2 = "Carlos Alcaraz") |>
@@ -515,8 +782,12 @@ combined_sin_alc_fixed_df <- bind_rows(sin_serving_fp, alc_serving_fp) |>
            P2SetsWon = cumsum(SetWinner == 2)) |>
   select(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,
          P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon) |>
-  mutate(PointServer = case_when(P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 1 ~ 2,
-                                 P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 2 ~ 1,
+  mutate(PointServer = case_when(P1PointsWon == 0 & 
+                                   P2PointsWon == 0 & 
+                                   PointServer == 1 ~ 2,
+                                 P1PointsWon == 0 & 
+                                   P2PointsWon == 0 & 
+                                   PointServer == 2 ~ 1,
                                  TRUE ~ PointServer))
 
 plot_sin_alc_fixed_prior <- get_plot_df(combined_df = combined_sin_alc_fixed_df, 
@@ -530,58 +801,264 @@ plot_sin_alc_fixed_prior <- get_plot_df(combined_df = combined_sin_alc_fixed_df,
   mutate(set_number = as.factor(set_number))
 ```
 
+And now that we have the probabilities of Alcaraz winning the match with our "Small Prior", "Large Prior", and the fixed probability of both Sinner and Alcaraz winning a point on serve set at 0.68, we can plot these alongside one another.
 ```{r}
+#| echo: true
+#| warning: false
+#| message: false
 plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_line(aes(y = win_prob_px, 
-                color = factor("Small Prior", levels = c("Small Prior", "Large Prior", "Fixed Probability"))), 
+                color = factor("Small Prior", 
+                               levels = c("Small Prior", 
+                                          "Large Prior", 
+                                          "Fixed Probability"))), 
                 alpha = 0.9) +
-  geom_line(data = plot_sin_alc_large_prior, aes(y = win_prob_px, color = "Large Prior"), alpha = 0.5) +
-  geom_line(data = plot_sin_alc_fixed_prior, aes(y = win_prob_px, color = "Fixed Probability (0.68)"), alpha = 0.5) +
+  geom_line(data = plot_sin_alc_large_prior, 
+            aes(y = win_prob_px, color = "Large Prior"), alpha = 0.5) +
+  geom_line(data = plot_sin_alc_fixed_prior, 
+            aes(y = win_prob_px, 
+                color = "Fixed Probability (0.68)"), 
+            alpha = 0.5) +
   labs(x = "Point Number",
        y = "Probability of Winning Match",
        title = "Alcaraz vs Sinner US Open Quarterfinal 2022",
        subtitle = "Probability of Alcaraz Winning Match with Different Priors",
        caption = "Comparing Different Prior Distributions",
        color = "Server") +
-  scale_color_manual(values = c("Small Prior" = "red", "Large Prior" = "blue", "Fixed Probability" = "green"),
-                     labels = c("Small Prior", "Large Prior", "Fixed Probability (0.68)")) +
+  scale_color_manual(values = c("Small Prior" = "red", 
+                                "Large Prior" = "blue", 
+                                "Fixed Probability" = "green"),
+                     labels = c("Small Prior", 
+                                "Large Prior", 
+                                "Fixed Probability (0.68)")) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_colour_viridis_d(end = 0.9) +
-  theme_bw(base_size = 14) +
-  annotate("text", x = 110, y = 0.2, label = "Starting Win-Serve Probabilities:", size = 3.5, color = "black") +
+  theme_bw(base_size = 10) +
+  annotate("text", x = 110, y = 0.2, 
+           label = "Starting Win-Serve Probabilities:", 
+           size = 3.5, color = "black") +
   annotate("text", x = 110, y = 0.15, 
-           label = paste0("'Small Prior - '*p[alcaraz]: 0.6229*', '*p[sinner]: 0.5606"), size = 3.5, color = "black",
-           parse = TRUE) +
+           label = paste0(
+             "'Small Prior - '*p[alcaraz]: 0.6229*', '*p[sinner]: 0.5606"), 
+           size = 3.5, color = "black", parse = TRUE) +
   annotate("text", x = 110, y = 0.1, 
-           label = paste0("'Large Prior - '*p[alcaraz]: 0.61768*', '*p[sinner]: 0.6056"), size = 3.5, color = "black",
-           parse = TRUE) +
+           label = paste0(
+             "'Large Prior - '*p[alcaraz]: 0.61768*', '*p[sinner]: 0.6056"), 
+           size = 3.5, color = "black", parse = TRUE) +
   annotate("text", x = 110, y = 0.05, 
-           label = "'Fixed Probability - '*p[alcaraz]: 0.68*', '*p[sinner]: 0.68", size = 3.5, color = "black",
-           parse = TRUE)
+           label = "'Fixed Probability - '*p[alcaraz]: 0.68*', '*p[sinner]: 0.68", 
+           size = 3.5, color = "black", parse = TRUE)
 ```
 
-Using different size priors changes the probabilities of Alcaraz and Sinner winning a point on their serve at the start of the match, and lead to different probabilities of Alcaraz winning the overall match.
+We can see here now that using different priors changes the probabilities of Alcaraz and Sinner winning a point on their serve at the start of the match, and lead to different probabilities of Alcaraz winning the overall match. The different probabilities of winning a point at the start of the match for the different players are shown in the annotations on the bottom left of the plot.
 
+The prior we originally looked at for this match is the purple line labeled “Small Prior”. In the “Small Prior” we included leadup tournaments to the 2022 US Open and the early rounds of the 2022 US Open to calculate the probabilities of Sinner and Alcaraz winning a point on their serve. We see that this line starts with the highest probability of Alcaraz winning the match, due to this prior generating probabilities of winning a point on serve between the two players that had the greatest difference between them (in favor of Alcaraz).
 
-### Appendix
+In the “Large Prior”, the blueish line, we are including all hard court matches over the last year including the 2021 US Open, and early rounds of the 2022 US Open. The probabilities of winning a point on serve for the two players are closer together in this prior, and we see that the probability of Alcaraz winning the match is lower at the start of the match compared to the “Small Prior”.
 
-#### Reading in Match data
+We can also see what happens when we fix both of their probabilities of winning a point on serve at 0.68, and this is the yellow line here. The probability of Alcaraz winning the match starts at 0.5, as we would expect, due to both players having the same probability of winning a point on serve.
+
+We can see the changes in the probability of Alcaraz winning the match based on these different starting probabilities of winning a point on serve, which we generated using different prior distributions.
+
+## Caclulating In-Match-Win Probability (Gauff vs Sabalenka, Case Study 2)
+
+We can explore any match with the set up of the project. For our second case study, we look at the 2023 US Open Women's Singles Final match between Coco Gauff and Arnya Sabalenka.
+
+Gauff, a young, rising American star was looking for her first Grand Slam title at the age of 19. Sabalenka, a powerful Belarusian player, was looking for her second Grand Slam title, winning the Australian Open back in January of that year. Gauff came into the tournament on a very hot streak, having won lead-up tournaments in Washington, D.C. and Cincinnati. The win in D.C. was her first at the WTA 500 level, and in Cincinnati her first at the Masters 1000 level.
+
+Gauff was able to come from behind and win in 3 sets: 2-6, 6-3, 6-2, and capture her first Grand Slam title. 
+
+In women’s tennis breaks of serve are more common. This is because women are often better returners, and often generate less of an advantage when serving. On the men’s side we saw big spikes for breaking serve on the plot of in-match-win probability. On the women's side we see some jumps for both breaks and holds, and the jumps may not be as extreme.
+
+With Gauff winning the match, we are exploring the probability that Gauff wins the match.
+
+First, we need to calculate the probability of Gauff winning a point while serving against Sabalenka and the probability of Sabalenka winning a point while serving against Gauff. We use our `create_prior()` function again, and use a similar prior from the exploration of the match between Sinner and Alcaraz. For the prior, we include matches in the hard court lead-up tournaments to the 2023 Women's US Open and the earlier rounds of the 2023 US Open before the final was played.
+```{r}
+#| output: false
+#| message: false
+#| cache: true
+#| echo: true
+aug_mod_gau_small_prior <- create_prior(ext = "wta_matches_2023.csv",
+                         tourn_name = "Us Open",
+                         surf = "Hard",
+                         start_date = "2023-07-24",
+                         end_date = "2023-09-8",
+                         player1 = "Coco Gauff",
+                         player2 = "Aryna Sabalenka",
+                         ref_player = "Iga Swiatek")
+aug_mod_gau_small_prior |> kable()
+```
+From the output, we see that Gauff has a mean value of winning a point while serving against Sabalenka of `0.3555439` with a standard error of `0.1026245`, and both of these are on the log-odds scale. We can also see that Gauff has a mean value of winning a point while returning against Sabalenka of `-0.1906711` with a standard error of `0.1049427`. We can negate the value of Gauff winning a point while returning against Sabalenka to get Sabalenka's probability of winning a point while serving against Gauff. We can then convert these from the log-odds scale to probabilities of winning a point on serve using the logistic function `expit()`. 
+```{r}
+# probability Gauff wins a point on serve
+expit(0.3555439) # 0.5879613
+# probability Gauff wins a point on return
+expit(-0.1906711) # 0.4524761
+
+# probability Sabalenka wins a point on serve
+expit(0.1906711) # 0.5475239
+# probability Sabalenka wins a point on return
+expit(-0.3555439) # 0.4120387
+```
+
+We can load in our point-level data for the match with our function `wrangle_point_level()`. 
+```{r}
+#| output: false
+#| message: false
+#| cache: true
+#| echo: true
+# returns list of two data frames
+both_gauff_saba_serving_df <- wrangle_point_level(ext = "2023-usopen-points.csv",
+                               ID = "2023-usopen-2701")
+# first data frame corresponds to player1 (Gauff)
+gauff_serving <- both_gauff_saba_serving_df[[1]]
+# second data frame corresponds to player2 (Sabalenka)
+saba_serving <- both_gauff_saba_serving_df[[2]]
+```
+
+We use the `get_probabilities_df()` function to calculate the updated probabilities of Gauff and Sabalenka winning a point on serve after each successive point is played.
+```{r}
+#| output: false
+#| message: false
+#| cache: true
+#| echo: true
+combined_prob_gauff_sab_sp_df <- get_probabilities_df(p1_serving_df = gauff_serving,
+                                 p2_serving_df = saba_serving,
+                                 p1 = "Coco Gauff",
+                                 p2 = "Aryna Sabalenka",
+                                 p1_original_prob = 0.3555439,
+                                 p1_original_se = 0.1026245,
+                                 p2_original_prob = 0.1906711,
+                                 p2_original_se = 0.1049427)
+```
+
+With the probabilities of the Gauff and Sabalenka winning a point on serve updated for the entire match, we can calculate the overall probability of the Gauff winning the match. We use the `get_plot_df()` function to do this.
+```{r}
+#| output: false
+#| message: false
+#| cache: true
+#| echo: true
+plot_gauff_sab_small_prior <- get_plot_df(combined_df = combined_prob_gauff_sab_sp_df,
+                                        which_player_prob = 1,
+                                        best_of_3 = TRUE,
+                                        advantage = FALSE,
+                                        type = "distribution") |>
+  mutate(set_number = as.factor(as.numeric(total_sets))) |>
+  # fix last row in data set where set_number is 4, should be a 3
+  mutate(set_number = ifelse(pt_number == max(pt_number), '3', set_number)) |>
+  mutate(set_number = as.factor(set_number))
+```
+
+And now we can plot the probability of Gauff winning the match:
+```{r}
+# create the boundaries for the sets
+set_boundaries_gauff_sab_small_prior <- plot_gauff_sab_small_prior |>
+  group_by(set_number) |>
+  summarize(xmin = min(pt_number) - 0.5,
+            xmax = max(pt_number) + 0.5)
+# plot
+plot_gauff_sab_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
+  geom_rect(data = set_boundaries_gauff_sab_small_prior, 
+            aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
+                ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
+  geom_line(aes(y = win_prob_px)) +
+  labs(x = "Point Number",
+       y = "Probability of Winning Match",
+       title = "Gauff vs Sabalenka US Open Final 2023",
+       subtitle = "Probability of Gauff Winning Match",
+       caption = "Prior contains 'lead-up' tournaments to the 2023 USO and 2023 USO itself",
+       color = "Server") +
+  coord_cartesian(ylim = c(0, NA)) +
+  theme_bw()
+```
+
+We see Gauff start with a high probability of winning the match (above 0.5) due to her probability of winning a point on serve being higher than Sabalenka's at the beginning of the match.
+
+First set:
+
+  * Sabalenka starts off hot and breaks Gauff's serve in the first game of the match
+  * With Sabalenka serving at 2-1, Gauff breaks back to level the set at 2-2
+  * Sabalenka wins the next 4 games to take the first set 6-2
+  * Gauff's updated probability of winning a point on serve at the end of the set is 0.578
+  * Sabalenkas' updated probability of winning a point on serve at the end of the set is 0.552
+  
+We see Gauff's probability of winning the match drop significantly after this first set.
+  
+Second set:
+
+  * Gauff saves multiple break points in the first game and is able to hold for 1-0
+  * Gauff breaks Sabalenka's serve in the fourth game of the set to go up 3-1
+  * Gauff is able to maintain her break of serve and take the second set 6-3
+  * Gauff's updated probability of winning a point on serve at the end of the set is 0.585
+  * Sabalenkas' updated probability of winning a point on serve at the end of the set is 0.554
+
+Third set:
+
+  * Gauff breaks Sabalenka's serve in the first game of the set
+  * Gauff holds for 2-0
+  * Gauff breaks Sabalenka's serve again in the third game of the set
+  * Gauff holds for 4-0
+  * Sabalenka slows Gauff's momentum as she holds for 1-4
+  * Sabalenka breaks Gauff's serve, 2-4
+  * Gauff breaks right back to go up 5-2, and serves out the match to win 6-2
+  * Gauff's updated probability of winning a point on serve at the end of the match is 0.587
+  * Sabalenkas' updated probability of winning a point on serve at the end of match set is 0.546
+
+As noted before, breaks of serve are not as valuable in women's tennis. Because of this, the probabilities of winning the match tend to not go towards 0 or 1 as much. However, if Sabalenka were to have gone up early in the second set by a break or two, Gauff's probability of winning would have dropped quite low. Matches that are mostly one-sided, straight-set victories will have a player's probability of winning the match be close to 0 or 1 (depending on which player is being looked at), in both men's and women's matches. None of the sets being closer than 6-3 in this match also contributed to the probabilities not going towards 0 or 1.
+
+## Conclusion
+
+In conclusion, we’ve gotten to look into the use of Bayesian modeling at estimating the outcome of a match. We’ve seen how we can estimate the probabilities of players winning a point on their serve at the start of a match, and update these probabilities as each point of a match is played. We can use these probabilities as well as the score of the match to come up with a players probability of winning a match.
+
+We've seen how tennis matches unfold with rapid momentum shifts, highlighting the importance of adaptively updating win probabilities with each point scored. Our Bayesian approach allows for this dynamic adjustment, providing an understanding of players' performance trajectories over the course of a match.
+
+Through comprehensive match data and Bayesian statistical methods, we've uncovered insights into players' serve probabilities and their pivotal role in determining match outcomes.
+
+Looking ahead, our project sets the stage for further exploration and refinement. Future research could involve fine-tuning prior distributions, integrating real-time match data for more accurate predictions, and extending the analysis to encompass different tennis contexts and even other sports. By continually adapting Bayesian modeling techniques, we can explore many predictive applications beyond tennis, contributing to advancements in sports analytics and beyond.
+
+## Acknowledgements
+
+I would like to thank Jeff Sackman for providing the data used in this project. The data was obtained from his GitHub repository, which can be found [here](https://github.com/JeffSackmann). Having stats for every point in a match is invaluable for this type of analysis, and the amount of matches available is impressive.
+
+I would also like to thank skoval for their work on the `deuce` package. The package is helps with calculating the in-match-win probability, using the function `in_match_win()`.
+
+I also want to thank James Wolpe, St. Lawrence Class of 2023, for his work on paired competition models prior distributions. His work in his `compr` package was used in creating the prior distributions for the players in this project.
+
+Last but not at all least, I want to thank my advisor, Dr. Matt Higham, for his guidance and support throughout this project. It was a pleasure working with him, and his expertise in statistics, as well as his knowledge of and interest in tennis, was invaluable in the completion of this project. 
+
+## Appendix
+
+In this appendix, we have relevant code snippets and functions used in the project. These include:
+
+  1. Reading in Match Data: Function to read ATP and WTA match data from Jeff Sackmann's GitHub repository.
+  2. Creating Prior Distributions: Function to create prior distributions of player probabilities of winning a point on serve at the start of a match.
+  3. Reading in Point-by-Point Data: Function to read point-by-point data from Jeff Sackmann's GitHub repository for a specific match of interest.
+  4. Getting Probabilities of Winning Point on Serve Throughout the Match: Function to calculate the probabilities of winning a point on serve for each player throughout the match.
+  5. Getting Data Frame for Plotting Win Probabilities: Function to prepare data frame for plotting win probabilities during the match.
+
+### Reading in Match data
 
 Function that reads in ATP and WTA match data from Jeff Sackmann's GitHub repository.
 
 Inputs:
+
   * `ext`: extension of the file to read in. Must start with 'atp' or 'wta'
   
 Output:
+
   * Data frame with data on matches from the specified extension
   
 ```{r}
 read_matches <- function(ext = "atp_matches_2022.csv") {
   if (substr(ext, 1, 3) == "atp") {
-    url <- paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/", ext)
+    url <- paste0(
+      "https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/", 
+      ext)
   } else if (substr(ext, 1, 3) == "wta") {
-    url <- paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master/", ext)
+    url <- paste0(
+      "https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master/", 
+      ext)
   } else {
     stop("Invalid extension. Extension must start with 'atp' or 'wta'.")
   }
@@ -593,11 +1070,12 @@ read_matches <- function(ext = "atp_matches_2022.csv") {
 }
 ```
 
-#### Creating Prior Distributions
+### Creating Prior Distributions
 
 Function that creates prior distributions of player probabilities of winning a point on serve at the start of a match.
 
 Inputs:
+
   * `ext`: extension of the file to read in. Must start with 'atp' or 'wta'.
   * `tourn_name`: name of the tournaments to include in prior
   * `surf`: surface of the tournaments to include in prior
@@ -608,6 +1086,7 @@ Inputs:
   * `ref_player`: name of reference player
   
 Output:
+
   * Data frame with:
       - probability of player1 winning a point on serve at the start of the match
       - sd of the probability of player1 winning a point on serve at the start of the match
@@ -654,14 +1133,16 @@ create_prior <- function(ext = c("atp_matches_2021.csv",
   ## grab the round from the match of interest
   round_of_interest <- match_of_interest |> pull(round)
   
-  # filter for relevant matches
+  ## filter for relevant matches
   prior <- matches |>
     mutate(tourney_date = lubridate::ymd(tourney_date)) |>
     filter((tourney_name == tourn_name | surface == surf) &
-             (tourney_date <= lubridate::ymd(end_date) & tourney_date >= lubridate::ymd(start_date))) |>
+             (tourney_date <= lubridate::ymd(end_date) & 
+                tourney_date >= lubridate::ymd(start_date))) |>
     ## add a filter to remove matches beyond the match of interest
     filter((tourney_name != tourn_name) |
-             (tourney_name == tourn_name & lubridate::year(tourney_date) != lubridate::year(end_date)) |
+             (tourney_name == tourn_name & 
+                lubridate::year(tourney_date) != lubridate::year(end_date)) |
              (tourney_name == tourn_name & round > round_of_interest))
   
   prior_points <- prior |>
@@ -670,7 +1151,8 @@ create_prior <- function(ext = c("atp_matches_2021.csv",
            w_svpt_l = w_svpt - w_svpt_w,
            l_svpt_w = l_1stWon + l_2ndWon,
            l_svpt_l = l_svpt - l_svpt_w) |>
-    select(winner_name, loser_name, w_svpt_w, w_svpt_l, l_svpt_w, l_svpt_l, match_num,
+    select(winner_name, loser_name, w_svpt_w, w_svpt_l, 
+           l_svpt_w, l_svpt_l, match_num,
            1:5, 7, 9, 16:17) |>
     pivot_longer(cols = c("w_svpt_w", "w_svpt_l", "l_svpt_w", "l_svpt_l"),
                  names_to = "won_point",
@@ -715,15 +1197,17 @@ create_prior <- function(ext = c("atp_matches_2021.csv",
 }
 ```
 
-#### Reading in Point-by-Point data
+### Reading in Point-by-Point data
 
 Function that reads in point-by-point data from Jeff Sackmann's GitHub repository for a specific match of interest.
 
 Inputs:
+
   * `ext`: extension of the file to read in, tournament that contains the match of interest
   * `ID`: match ID of the match to read in
   
 Outputs:
+
   * Data frame with the point-by-point data for the specified match with player1 serving
   * Data frame with the point-by-point data for the specified match with player2 serving
 
@@ -731,7 +1215,8 @@ Outputs:
 library(rstanarm)
 wrangle_point_level <- function(ext = "2022-usopen-points.csv",
                                ID = "2022-usopen-1503") {
-  df <- readr::read_csv(paste0("https://raw.githubusercontent.com/JeffSackmann/tennis_slam_pointbypoint/master/",
+  df <- readr::read_csv(paste0(
+    "https://raw.githubusercontent.com/JeffSackmann/tennis_slam_pointbypoint/master/",
                                ext))
   df <- df |> dplyr::filter(match_id == ID) |>
     dplyr::mutate(P1GamesWon = ifelse(SetWinner != 0, 0, P1GamesWon),
@@ -768,13 +1253,14 @@ wrangle_point_level <- function(ext = "2022-usopen-points.csv",
 }
 ```
 
-#### Getting Probabilities of Winning Point on Serve Throughout the Match
+### Getting Probabilities of Winning Point on Serve Throughout the Match
 
 Function that calculates the probabilities of winning a point on serve for each player throughout the match.
 
 MAKE NOTE OF stan_glm from compr / comp_prior_start.R
 
 Inputs:
+
   * `p1_serving_df`: data frame with point-by-point data for player1 serving from match of interest
   * `p2_serving_df`: data frame with point-by-point data for player2 serving from match of interest
   * `p1`: name of player1
@@ -785,6 +1271,7 @@ Inputs:
   * `p2_original_se`: original standard error of player2 winning a point on serve (from create_prior, on log odds scale)
   
 Output:
+
   * Data frame with point-level data and probabilities of winning a point on serve for each player throughout the match
 
 ```{r}
@@ -859,15 +1346,23 @@ get_probabilities_df <- function(p1_serving_df = sin_serving,
   #  match with a sample from the prior
   if (combined_df$PointServer[1] == 1) {
     combined_df[1, "p2_wserv_prob"] <- p2_original_prob |> expit()
-    combined_df[1, "p2_wserv_prob_list"][[1]] <- rnorm(4000, p2_original_prob,
-                                                       p2_original_se) |> expit() |>
-      as_tibble() |> rename(`(Intercept)` = value) |> list()
+    combined_df[1, "p2_wserv_prob_list"][[1]] <- rnorm(4000, 
+                                                       p2_original_prob,
+                                                       p2_original_se) |> 
+      expit() |> 
+      as_tibble() |> 
+      rename(`(Intercept)` = value) |> 
+      list()
     
   } else {
     combined_df[1, "p1_wserv_prob"] <- p1_original_prob |> expit()
-    combined_df[1, "p1_wserv_prob_list"][[1]] <- rnorm(4000, p1_original_prob,
-                                                       p1_original_se) |> expit() |>
-      as_tibble() |> rename(`(Intercept)` = value) |> list()
+    combined_df[1, "p1_wserv_prob_list"][[1]] <- rnorm(4000, 
+                                                       p1_original_prob,
+                                                       p1_original_se) |> 
+      expit() |> 
+      as_tibble() |> 
+      rename(`(Intercept)` = value) |> 
+      list()
   }
   
   combined_filled <- combined_df |>
@@ -878,25 +1373,27 @@ get_probabilities_df <- function(p1_serving_df = sin_serving,
   combined_final <- combined_filled |>
     mutate(P1SetsWon = cumsum(SetWinner == 1),
            P2SetsWon = cumsum(SetWinner == 2))
-  
-  ## TODO
-  ## make p1_wserv_prob and p2_wserv_prob columns of
-  ## lists with the posterior samples
+
   combined_final_cleaned <- combined_final |>
     select(pt_number, player1, player2, PointServer, p1_wserv_prob, p2_wserv_prob,
            P1PointsWon, P2PointsWon, P1GamesWon, P2GamesWon, P1SetsWon, P2SetsWon,
            p1_wserv_prob_list, p2_wserv_prob_list) |>
-    mutate(PointServer = case_when(P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 1 ~ 2,
-                                   P1PointsWon == 0 & P2PointsWon == 0 & PointServer == 2 ~ 1,
+    mutate(PointServer = case_when(P1PointsWon == 0 & 
+                                     P2PointsWon == 0 & 
+                                     PointServer == 1 ~ 2,
+                                   P1PointsWon == 0 & 
+                                     P2PointsWon == 0 & 
+                                     PointServer == 2 ~ 1,
                                    TRUE ~ PointServer))
   
   return(combined_final_cleaned)
 }
 ```
 
-#### Getting Data Frame for Plotting Win Probabilities
+### Getting Data Frame for Plotting Win Probabilities
 
 Inputs:
+
   * `combined_df`: Data frame with all the match data (from get_probabilities_df)
   * `which_player_prob`: Which player's win probability to plot (player1 or player2)
   * `best_of_3`: Whether the match is best of 3 sets (`FALSE` if best of 5, `TRUE` if best of 3)
@@ -904,6 +1401,7 @@ Inputs:
   * `type`: Type of plot to create (`mean` for mean win probability, `distribution` for distribution of win probability)
   
 Output:
+
   * Data frame with the necessary columns for plotting win probabilities
 
 ```{r}
@@ -1044,10 +1542,10 @@ get_plot_df <- function(combined_df,
     arrange(pt_number) |>
     mutate(total_sets = as.factor(P1SetsWon + P2SetsWon)) |>
     # create probability var for just player 1 winning
-    mutate(win_prob_px = ifelse(PointServer == which_player_prob, probability, 1 - probability))
+    mutate(win_prob_px = ifelse(PointServer == which_player_prob, 
+                                probability, 
+                                1 - probability))
   
   return(recombined_df)
 }
 ```
-
-

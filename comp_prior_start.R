@@ -36,9 +36,7 @@ atp_us_prior <- atp_21_23 |>
 ## not a match.
 ## Use the `tennis_point` data below as a model goal
 
-## james is working on this package in his own repository: you'll likely
-## be changing to his version once he gets it working
-# devtools::install_github(repo = "https://github.com/highamm/compr")
+# devtools::install_github(repo = "https://github.com/jameswolpe/compr")
 
 library(compr)
 
@@ -72,6 +70,3 @@ expit <- function(x) {
   exp(x) / (1 + exp(x))
 }
 expit((0.580 + 0.756) - 0.230)
-
-## James's version will make it much easier to snag both
-## the predicted log odds and the standard error (on the log odds scale)

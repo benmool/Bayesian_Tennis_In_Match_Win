@@ -1,16 +1,6 @@
 # README.qmd
 
 
-    Rows: 47243 Columns: 65
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr (10): match_id, ElapsedTime, PointNumber, P1Score, P2Score, WinnerType, ...
-    dbl (38): SetNo, P1GamesWon, P2GamesWon, SetWinner, GameNo, GameWinner, Poin...
-    lgl (17): Rally, P1FirstSrvIn, P2FirstSrvIn, P1FirstSrvWon, P2FirstSrvWon, P...
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
 ## ATP and WTA Professional Tennis: Calculating In-Match-Win Probability with Bayesian Modeling
 
 This project explores the probabilities of professional tennis players
@@ -69,7 +59,7 @@ With these estimated probabilities and standard deviations, we then
 create distributions for the prior probabilities of winning a point on
 serve for Alcaraz and Sinner.
 
-![](README_files/figure-commonmark/unnamed-chunk-3-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-4-1.png)
 
 From our prior distributions, we can see that Sinner’s probability of
 winning a point on serve against Alcaraz is around 0.57, and Alcaraz’s
@@ -93,7 +83,7 @@ and see how his probability of winning a point on serve has changed. At
 this state of the match, Sinner has played 150 points on his serve and
 won 89 of them, which is right around 0.6.
 
-![](README_files/figure-commonmark/unnamed-chunk-5-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-6-1.png)
 
 We can see that Sinner’s probability distribution of winning a point on
 serve when he is serving at 40-15, 1-1 in the 3rd set has shifted from
@@ -113,7 +103,7 @@ calculate the overall probability of winning the match.
 For our example, we will explore the probability that Alcaraz wins the
 match.
 
-![](README_files/figure-commonmark/unnamed-chunk-8-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-9-1.png)
 
 ### Changing Prior Distributions
 
@@ -133,10 +123,7 @@ Open itself. We can also fix the probabilities of Sinner and Alcaraz
 winning a point on serve at a specific value, such as 0.68 (around tour
 average).
 
-    Scale for colour is already present.
-    Adding another scale for colour, which will replace the existing scale.
-
-![](README_files/figure-commonmark/unnamed-chunk-10-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-11-1.png)
 
 Using different size priors changes the probabilities of Alcaraz and
 Sinner winning a point on their serve at the start of the match, and

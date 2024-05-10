@@ -3,7 +3,7 @@ title: "README.qmd"
 format: gfm
 ---
 
-```{r, show_col_types = FALSE}
+```{r}
 #| output: false
 #| echo: false
 #| warning: false
@@ -17,7 +17,13 @@ library(deuce)
 library(ggplot2)
 library(knitr)
 library(kableExtra)
+```
 
+```{r}
+#| output: false
+#| echo: false
+#| warning: false
+#| message: false
 # Source the functions
 source("comp_prior_start.R")
 source("bayes_intro.R")
@@ -29,6 +35,8 @@ source("get_plot_df.R")
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 sin_alc_paired <- wrangle_point_level(ext = "2022-usopen-points.csv",
                                ID = "2022-usopen-1503")
 
@@ -88,7 +96,7 @@ ggplot(data = both_priors_df, aes(x = prob)) +
        x = "Probability of Winning a Point (on serve)",
        y = "Density",
        caption = "Prior includes matches from leadup tournaments to 2022 USO and 2022 USO itself") +
-  theme_bw(base_size = 20)
+  theme_bw(base_size = 12)
 ```
 
 From our prior distributions, we can see that Sinner's probability of winning a point on serve against Alcaraz is around 0.57, and Alcaraz’s probability of winning a point on serve against Sinner is around 0.62. These are our starting probability distributions for the match. Based on their prior matches we have included, we think that Alcaraz has a higher probability of winning a point on his serve than Sinner does, but, there is some overlap in their prior distributions. As each point is played, we will update these probability distributions.
@@ -156,7 +164,7 @@ ggplot(data = plot_df, aes(x = prob)) +
        y = "Density",
        caption = "Sinner: 89/150 points won on serve") +
   coord_cartesian(ylim = c(0, 17)) +
-  theme_bw(base_size = 22)
+  theme_bw(base_size = 12)
 ```
 
 We can see that Sinner's probability distribution of winning a point on serve when he is serving at 40-15, 1-1 in the 3rd set has shifted from the prior distribution, closer to 0.6.
@@ -171,6 +179,8 @@ For our example, we will explore the probability that Alcaraz wins the match.
 #| output: false
 #| cache: true
 #| echo: false
+#| warning: false
+#| message: false
 combined_prob_sin_alc_sp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
@@ -195,6 +205,8 @@ fills <- c("#F57A5C", "#F5C25C", "#94E25B", "#69CEE0", "#A875CE")
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 plot_five_sets_sin_alc <- plot_sin_alc_small_prior |>
   filter(set_number == 1 | set_number == 2 | set_number == 3 | set_number == 4 | set_number == 5)
 
@@ -207,6 +219,8 @@ five_set_boundaries_alc_sin_small_prior <- plot_sin_alc_small_prior |>
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_rect(data = five_set_boundaries_alc_sin_small_prior, aes(x = NULL, y = NULL, xmin = xmin, xmax = xmax, 
                                        ymin = -Inf, ymax = Inf, fill = set_number), alpha = 0.2) + 
@@ -220,7 +234,7 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_fill_manual(values = fills[1:5]) +
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 12)
 ```
 
 ### Changing Prior Distributions
@@ -233,6 +247,8 @@ For our example, we will explore the effect of changing the prior distributions 
 #| output: false
 #| cache: true
 #| echo: false
+#| warning: false
+#| message: false
 combined_prob_alc_sin_lp_df <- get_probabilities_df(p1_serving_df = sin_serving,
                                  p2_serving_df = alc_serving,
                                  p1 = "Jannik Sinner",
@@ -289,6 +305,8 @@ plot_sin_alc_fixed_prior <- get_plot_df(combined_df = combined_sin_alc_fixed_df,
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   geom_line(aes(y = win_prob_px, 
                 color = factor("Small Prior", levels = c("Small Prior", "Large Prior", "Fixed Probability"))), 
@@ -306,7 +324,7 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
   coord_cartesian(ylim = c(0, 1),
                   xlim = c(0, nrow(plot_sin_alc_small_prior))) +
   scale_colour_viridis_d(end = 0.9) +
-  theme_bw(base_size = 14) +
+  theme_bw(base_size = 10) +
   annotate("text", x = 110, y = 0.2, label = "Starting Win-Serve Probabilities:", size = 3.5, color = "black") +
   annotate("text", x = 110, y = 0.15, 
            label = paste0("'Small Prior - '*p[alcaraz]: 0.6229*', '*p[sinner]: 0.5606"), size = 3.5, color = "black",
@@ -320,4 +338,3 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
 ```
 
 Using different size priors changes the probabilities of Alcaraz and Sinner winning a point on their serve at the start of the match, and lead to different probabilities of Alcaraz winning the overall match.
-

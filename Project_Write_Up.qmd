@@ -1,7 +1,7 @@
 ---
 title: "ATP and WTA Professional Tennis: Calculating In-Match-Win Probability with Bayesian Modeling"
 author: 
-  - name: "Ben Moolman"
+  - name: "Benjamin G. Moolman"
   - name: "Advisor: Matt Higham"
 institute: "St. Lawrence University"
 number-sections: true
@@ -63,21 +63,22 @@ In this project, we explore the in-match-win probability of professional tennis 
 
 ## Outline
 
-We begin by exploring tennis scoring to get an understanding of how a match is played in @sec-scoring. We then look at the data we are using in this project on @sec-data. Then, in @sec-bayesianmod, we discuss Bayesian modeling, and come up with our probabilities of the players winning a point on their serves against specific opponents. We calculate the in-match-win probability and how we update our prior distributions throughout the match. We then look at the case studies of the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner, and discuss how we can change what matches we include in our prior distribution in @sec-alcsin and @sec-changeprior. We also explore the 2023 Women's US Open Final between Coco Gauff and Aryna Sabalenka in @sec-gauffsab. We conclude in @sec-conclusion with a discussion of the results and potential future work. An appendix in @sec-appendix is included with the code used in this project for reference.
+We begin by exploring tennis scoring to get an understanding of how a match is played in @sec-scoring. We then look at the data we are using in this project on @sec-data. Then, in @sec-bayesianmod, we discuss Bayesian modeling, and come up with our probabilities of the players winning a point on their serves against specific opponents. We calculate the in-match-win probability and how we update our prior distributions throughout the match. We then look at the case studies of the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner, and discuss how we can change what matches we include in our prior distribution in @sec-alcsin and @sec-changeprior. We also explore the 2023 Women's US Open Final between Coco Gauff and Aryna Sabalenka in @sec-gauffsab. We conclude in @sec-conclusion with a discussion of the results and potential future work. An appendix in @sec-appendix includes code used in this project for reference.
 
 ## Tennis Scoring {#sec-scoring}
 
-The scoring format in tennis can be confusing to those that are not familiar with the sport. Below is a brief outline of how tennis matches are scored:
+The scoring format in tennis can be confusing to those not familiar with the sport. Below is a brief outline of how tennis matches are scored:
 
   * The match starts with one player serving at 0-0
-  * The server is the player that hits the ball first in a point
+  * The server is the player who hits the ball first in a point
+  * A player wins a point by hitting the ball over the net and into the opponent's court, and the opponent is unable to return the ball
   * The server alternates what direction they serve from after every point (deuce side and ad side)
   * A game is played with the server serving for the entire game
-  * A game is won by the first player to win 4 points, wining by a margin of 2 or more points
+  * A game is won by the first player to win 4 points, winning by a margin of 2 or more points
   * Sets are played first to 6 games, wining by a margin of 2 or more games
   * If the score reaches 6-6 in a set, a tiebreak is played
   * A tiebreak is won by the first player to win 7 points, wining by a margin of 2 or more points
-  * A match is played to the best of 3 or 5 sets based on the tournament format
+  * A match is played to the best of 3 or 5 sets depending on the tournament format
   
 A little more tennis terminology are the words break and hold, defined below:
 
@@ -90,7 +91,7 @@ A graphic is attached below to help, and a more detailed write-up can be found o
 
 ## Data {#sec-data}
 
-The data used in this project is from the ATP and WTA professional tennis tours, and is from Jeff Sackman's tennis data on  Github. There is [point-level data](https://github.com/JeffSackmann/tennis_slam_pointbypoint) on the ATP and WTA main-draw singles grand slam tournaments from 2011-present. There is also [match-level data](https://github.com/JeffSackmann/tennis_atp) for ATP matches and [match-level data](https://github.com/JeffSackmann/tennis_wta) for WTA matches. Access to the data is needed to ensure correct spelling of player names (especially nicknames, ie "Rafa Nadal" vs "Rafael Nadal") and tournament names, the correct date ranges, file paths, and match IDs for specific matches of interest. Checking these details is best done on the matches data frames, and if finding the information on the Github site is problematic, the data can be read in using the `read_matches()` function, which works for both ATP and WTA data.
+In professional tennis, the premier tours are the Association for Tennis Professionals (ATP) tour for men and the Women’s Tennis Association (WTA) tour for women. The data used in this project is from the ATP and WTA tours, and is from Jeff Sackman's tennis data on  Github. There is [point-level data](https://github.com/JeffSackmann/tennis_slam_pointbypoint) on the ATP and WTA main-draw singles grand slam tournaments from 2011-present. There is also [match-level data](https://github.com/JeffSackmann/tennis_atp) for ATP matches and [match-level data](https://github.com/JeffSackmann/tennis_wta) for WTA matches. Access to the data is needed to ensure correct spelling of player names (especially nicknames, ie "Rafa Nadal" vs "Rafael Nadal") and tournament names, the correct date ranges, file paths, and match IDs for specific matches of interest. Checking these details is best done on the matches data frames, and if finding the information on the Github site is problematic, the data can be read in using the `read_matches()` function, which works for both ATP and WTA data.
 
 We can explore what the data containing all of the matches looks like. Here we look at one match from the first round of the 2022 Men's US Open. This is one row of the data frame but is shown over multiple rows here for readability.
 ```{r}
@@ -128,7 +129,7 @@ one_match |> select(42:49) |>
   kable_styling(full_width = FALSE)
 ```
 
-We can explore some of the point level data to get a better understanding of what we are working with. Below are some selected rows from the point-level data once we have cleaned it and tidied it for what we need. This data is taken from the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner. We will rename the columns for better output, but the original names are used in the functions.
+We can explore some of the point-level data to get a better understanding of what we are working with. Below are some selected rows from the point-level data once we have cleaned it and tidied it for what we need. This data is taken from the 2022 Men's US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner. We will rename the columns for better output, but the original names are used in the functions.
 ```{r}
 #| echo: false
 #| warning: false
@@ -172,7 +173,7 @@ combined_sin_alc_points |>
                 font_size = 11)
 ```
 
-We next show some points at the end of the second set, as Sinner wins the second set tiebreak 9-7:
+We next show some points at the end of the second set and start of the third set:
 ```{r}
 #| echo: false
 #| warning: false
@@ -370,7 +371,7 @@ source("get_probabilities_df.R")
 source("get_plot_df.R")
 ```
 
-To calculate the prior distributions of the probabilities that Alcaraz and Sinner win a point on serve, we use our `create_prior()` function. Note that this function's outputs are on the log-odds scale, and contains the mean log-odds values and standard errors, and are also all in reference to `player1`, who, in this case, is Jannik Sinner.
+To calculate the prior distributions of the probabilities that Alcaraz and Sinner win a point on serve, we use our `create_prior()` function. Note that this function's outputs are on the log-odds scale, they contain the mean log-odds values and standard errors, and they are also all in reference to `player1`, who, in this case, is Jannik Sinner.
 
 ```{r}
 #| cache: true
@@ -401,7 +402,7 @@ expit(-0.2434863) # 0.4394274
 
 From this prior model, we estimate Sinner to win around 56.06% of points played on his serve against Alcaraz, and for Alcaraz to win around 62.29% of points played on his serve against Sinner.
 
-We can then create distributions to visualize what these probabilities look like, assuming normality on the log-odds scale. We will start with our log-odds and randomly generate 200,000 random samples from a normal distribution with mean log-odds from our prior and standard errors from our prior.
+We can then create distributions to visualize what these probabilities look like, assuming normality on the log-odds scale. We will start with our log-odds and randomly generate 200,000 samples from a normal distribution with mean log-odds from our prior and standard errors from our prior.
 ```{r}
 #| cache: true
 ## Save sinner log-odds and se from prior as variables
@@ -546,7 +547,7 @@ With the probability distributions of both players winning a point on their serv
 
 For our first case study, we continue to use our example that we have talked through to set up key aspects of this project. We look at the 2022 US Open Quarterfinal match between Jannik Sinner and Carlos Alcaraz, where Alcaraz defeated Sinner 6-3, 6-7(7), 6-7(0), 7-5, 6-3 in 5 sets.
 
-At the time, this match was highly anticipated to be a close match between two young, emerging stars in the tennis world. Sinner, an Italian player, was seeded 11th in the tournament and was known for his powerful groundstrokes and aggressive playing style. Alcaraz, a Spanish player, was seeded 3rd in the tournament but had been making waves in the tennis world with his athleticism and shot-making ability.
+At the time, this match was highly anticipated to be a close match between two young, emerging stars in the tennis world. Sinner, an Italian player, was seeded 11th in the tournament and was known for his powerful groundstrokes and aggressive playing style. Alcaraz, a Spanish player, was seeded 3rd in the tournament and had been making waves in the tennis world with his athleticism and shot-making ability.
 
 With Alcaraz being the eventual match winner, we are exploring the probability that Alcaraz wins the match.
 
@@ -694,7 +695,7 @@ Third set:
 Fourth set:
 
   * Sinner breaks Alcaraz's serve in the first game of the set, 1-0
-  * With Sinner servng at 3-2, Alcaraz breaks back to even the set at 3-3
+  * With Sinner serving at 3-2, Alcaraz breaks back to even the set at 3-3
   * Sinner breaks right back to go up 4-3
   * Sinner has a match point serving at 5-4, Ad-In, but Alcaraz saves it, and breaks for 5-5
   * Alcaraz holds for 6-5, and breaks Sinner to win the set 7-5
@@ -894,7 +895,7 @@ plot_sin_alc_small_prior |> ggplot(aes(x = pt_number, y = probability)) +
 
 We can see here now that using different priors changes the probabilities of Alcaraz and Sinner winning a point on their serve at the start of the match, and lead to different probabilities of Alcaraz winning the overall match. The different probabilities of winning a point at the start of the match for the different players are shown in the annotations on the bottom left of the plot.
 
-The prior we originally looked at for this match is the purple line labeled “Small Prior”. In the “Small Prior” we included leadup tournaments to the 2022 US Open and the early rounds of the 2022 US Open to calculate the probabilities of Sinner and Alcaraz winning a point on their serve. We see that this line starts with the highest probability of Alcaraz winning the match, due to this prior generating probabilities of winning a point on serve between the two players that had the greatest difference between them (in favor of Alcaraz).
+The prior we originally looked at for this match is the purple line labeled “Small Prior”. In the “Small Prior” we included leadup tournaments to the 2022 US Open and the early rounds of the 2022 US Open to calculate the probabilities of Sinner and Alcaraz winning a point on their serve. We see that this line starts with the highest probability of Alcaraz winning the match, due to the "Small Prior" generating probabilities of winning a point on serve for Sinner and Alcaraz with the greatest difference between them (0.6229 for Alcaraz and 0.5606 for Sinner).
 
 In the “Large Prior”, the blueish line, we are including all hard court matches over the last year including the 2021 US Open, and early rounds of the 2022 US Open. The probabilities of winning a point on serve for the two players are closer together in this prior, and we see that the probability of Alcaraz winning the match is lower at the start of the match compared to the “Small Prior”.
 
@@ -910,7 +911,7 @@ Gauff, a young, rising American star was looking for her first Grand Slam title 
 
 Gauff was able to come from behind and win in 3 sets: 2-6, 6-3, 6-2, and capture her first Grand Slam title. 
 
-In women’s tennis, breaks of serve are more common. This is because women are often better returners, and often generate less of an advantage when serving. On the men’s side we saw big spikes for breaking serve on the plot of in-match-win probability. On the women's side, we expect to see some jumps for both breaks and holds, but, we would expect that the jumps are less extreme in general.
+In women’s tennis, breaks of serve are more common than in men's tennis. This is because women are often better returners, and often generate less of an advantage when serving. On the men’s side we saw big spikes for breaking serve on the plot of in-match-win probability. On the women's side, we expect to see some jumps for both breaks and holds, but, we would expect that the jumps are less extreme in general.
 
 With Gauff winning the match, we are exploring the probability that Gauff wins the match.
 
@@ -976,7 +977,7 @@ combined_prob_gauff_sab_sp_df <- get_probabilities_df(
                                  p2_original_se = 0.1049427)
 ```
 
-With the probabilities of the Gauff and Sabalenka winning a point on serve updated for the entire match, we can calculate the overall probability of the Gauff winning the match. We use the `get_plot_df()` function to do this.
+With the probabilities of Gauff and Sabalenka winning a point on serve updated for the entire match, we can calculate the overall probability of Gauff winning the match. We use the `get_plot_df()` function to do this.
 ```{r}
 #| output: false
 #| message: false
@@ -1054,7 +1055,7 @@ As noted before, breaks of serve are not as valuable in women's tennis. Because 
 
 # Conclusion {#sec-conclusion}
 
-In conclusion, we have been able to look into the use of Bayesian modeling at estimating the outcome of a match. We have seen how we can generate prior distributions for the probabilities of players winning a point on their serve at the start of a match, and update these probabilities as each point of a match is played. We can use these probabilities as well as the score of the match to come up with a players probability of winning a match.
+In conclusion, we have been able to look into the use of Bayesian modeling for estimating the outcome of a professional tennis match. We have seen how we can generate prior distributions for the probabilities of players winning a point on their serve at the start of a match, and update these probabilities as each point of a match is played. We can use these probabilities as well as the score of the match to come up with a players probability of winning a match.
 
 We have seen how tennis matches unfold with rapid momentum shifts, highlighting the importance of adaptively updating win probabilities with each point scored. Our Bayesian approach allows for this dynamic adjustment, providing an understanding of players' performance trajectories over the course of a match.
 
@@ -1066,9 +1067,9 @@ Looking ahead, our project sets the stage for further exploration and refinement
 
 I would like to thank Jeff Sackman for providing the data used in this project. The data was obtained from his GitHub repository, which can be found [here](https://github.com/JeffSackmann). Having stats for every point in a match is invaluable for this type of analysis, and the amount of matches available is impressive.
 
-I would also like to thank Stephanie Kovalchik for their work on the `deuce` package. The package is helps with calculating the in-match-win probability, using the function `in_match_win()`.
+I would also like to thank Stephanie Kovalchik for their work on the `deuce` package. The package helps with calculating the in-match-win probability, using the function `in_match_win()`.
 
-I also want to thank James Wolpe, St. Lawrence Class of 2023, for his work on paired competition models prior distributions. His work in his `compr` package was used in creating the prior distributions for the players in this project.
+I also want to thank James Wolpe, St. Lawrence University Class of 2023, for his work on paired competition models prior distributions. His work in his `compr` package was used in creating the prior distributions for the players in this project.
 
 Last but not at all least, I want to thank my advisor, Dr. Matt Higham, for his guidance and support throughout this project. It was a pleasure working with him, and his expertise in statistics, as well as his knowledge of and interest in tennis, was invaluable in the completion of this project. 
 
@@ -1083,7 +1084,7 @@ In this appendix, we have relevant code snippets and functions used in the proje
   5. Getting Probabilities of Winning Point on Serve Throughout the Match: Function to calculate the probabilities of winning a point on serve for each player throughout the match.
   6. Getting Data Frame for Plotting Win Probabilities: Function to prepare data frame for plotting win probabilities during the match.
   
-## Transforming log-odds to probabilities
+## Transforming Log-Odds to Probabilities
 
 Function that transforms log-odds to probabilities.
 
@@ -1101,7 +1102,7 @@ expit <- function(x) {
 }
 ```
 
-## Reading in Match data
+## Reading in Match Data
 
 Function that reads in ATP and WTA match data from Jeff Sackmann's GitHub repository.
 

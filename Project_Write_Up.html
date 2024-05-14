@@ -8,6 +8,7 @@
 
 <meta name="author" content="Benjamin G. Moolman">
 <meta name="author" content="Advisor: Matt Higham">
+<meta name="dcterms.date" content="2024-05-14">
 
 <title>ATP and WTA Professional Tennis: Calculating In-Match-Win Probability with Bayesian Modeling</title>
 <style>
@@ -3506,6 +3507,12 @@ window.Quarto = {
 <div class="quarto-title-meta">
 
       
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 14, 2024</p>
+    </div>
+  </div>
   
     
   </div>
@@ -3515,6 +3522,7 @@ window.Quarto = {
 </header>
 
 
+<div style="page-break-after: always;"></div>
 <section id="introduction" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
 <p>In this project, we explore the in-match-win probability of professional tennis matches. Tennis’ scoring format allows for huge momentum swings in a short amount of time. We are going to explore how the probabilities that tennis players win a match are calculated and update throughout the match using Bayesian modeling. To determine the probability that a player (player 1) wins a match against another player (player 2), we incorporate (1) the probability that player 1 wins a point on serve against player 2, (2) the probability that player 2 wins a point on serve against player 1, and (3) the current score of the match of interest. The prior distributions for (1) and (2) are generated from points played in matches prior to the match of interest. Both (1) and (2) are then updated throughout the match of interest as points played between the two players update their prior point-win probabilities. As case studies, we explore the 2022 Men’s US Open Quarterfinal between Carlos Alcaraz and Jannik Sinner and the 2023 Women’s US Open Final between Coco Gauff and Arnya Sabalenka.</p>
@@ -3749,18 +3757,27 @@ window.Quarto = {
 <p>The first 10 points from the start of the match, where we see Alcaraz break Sinner’s serve in the first game of the match, are shown in the table below:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 14%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: right;" data-quarto-table-cell-role="th">server</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">pt_winner</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">p1_score</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">p2_score</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p1_games</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p2_games</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p1_sets</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p2_sets</th>
+<th style="text-align: right;">server</th>
+<th style="text-align: right;">pt_winner</th>
+<th style="text-align: left;">p1_score</th>
+<th style="text-align: left;">p2_score</th>
+<th style="text-align: right;">p1_games</th>
+<th style="text-align: right;">p2_games</th>
+<th style="text-align: right;">p1_sets</th>
+<th style="text-align: right;">p2_sets</th>
 </tr>
 </thead>
 <tbody>
@@ -3866,26 +3883,32 @@ window.Quarto = {
 </tr>
 </tbody>
 </table>
-
-
-</div>
 </div>
 </div>
 <p>We next show some points at the end of the second set and start of the third set:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 14%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: right;" data-quarto-table-cell-role="th">server</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">pt_winner</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">p1_score</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">p2_score</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p1_games</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p2_games</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p1_sets</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">p2_sets</th>
+<th style="text-align: right;">server</th>
+<th style="text-align: right;">pt_winner</th>
+<th style="text-align: left;">p1_score</th>
+<th style="text-align: left;">p2_score</th>
+<th style="text-align: right;">p1_games</th>
+<th style="text-align: right;">p2_games</th>
+<th style="text-align: right;">p1_sets</th>
+<th style="text-align: right;">p2_sets</th>
 </tr>
 </thead>
 <tbody>
@@ -4091,9 +4114,6 @@ window.Quarto = {
 </tr>
 </tbody>
 </table>
-
-
-</div>
 </div>
 </div>
 </section>

@@ -5,6 +5,7 @@ author:
   - name: "Advisor: Matt Higham"
 institute: "St. Lawrence University"
 number-sections: true
+date: "5/14/24"
 # format:
 #   pdf:
 #     toc: true
@@ -15,11 +16,13 @@ number-sections: true
 #           \usepackage{setspace}
 #           \onehalfspacing
 #           \linespread{2}
-format: 
+format:
   html:
     embed-resources: true
     toc: true
 ---
+
+\pagebreak
 
 ```{r}
 #| label: setup
@@ -168,9 +171,9 @@ combined_sin_alc_points |>
   mutate(p1_score = ifelse(p1_score == 4, "AD", p1_score),
          p2_score = ifelse(p2_score == 4, "AD", p2_score)) |>
   slice(1:10) |>
-  kable() |>
-  kable_styling(full_width = FALSE,
-                font_size = 11)
+  kable() # |>
+  # kable_styling(full_width = FALSE,
+  #              font_size = 11)
 ```
 
 We next show some points at the end of the second set and start of the third set:
@@ -179,9 +182,9 @@ We next show some points at the end of the second set and start of the third set
 #| warning: false
 #| message: false
 combined_sin_alc_points |> slice(143:162) |>
-  kable() |>
-  kable_styling(full_width = TRUE,
-                font_size = 11)
+  kable() # |>
+  # kable_styling(full_width = TRUE,
+                # font_size = 11)
 ```
 
 # Bayesian Modeling {#sec-bayesianmod}
